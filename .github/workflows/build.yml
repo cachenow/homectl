@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, e.g. v0.1.0"
+        description: "Release version, e.g. v0.3.0"
         required: true
-        default: "v0.1.0"
+        default: "v0.4.0"
 
 permissions:
   contents: write
@@ -15,20 +15,23 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Build metadata
         id: vars
         shell: bash
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "version must look like v0.4.0" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
 
-      - name: Setup Go
+      - name: Set up Go
         uses: actions/setup-go@v7
         with:
           go-version: "1.27.x"
@@ -37,27 +40,32 @@ jobs:
       - name: Resolve modules and test
         run: |
           go mod tidy
+          test -z "$(gofmt -l cmd internal)" || {
+            echo "Go files are not gofmt formatted:"
+            gofmt -l cmd internal
+            exit 1
+          }
           go test ./...
           go vet ./...
 
-      - name: Build release artifacts
+      - name: Build release assets
         run: bash ./scripts/build-release.sh "${{ steps.vars.outputs.version }}"
 
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+      - name: Build and push multi-arch server image
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -68,8 +76,8 @@ jobs:
             ${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.version }}
             ${{ steps.vars.outputs.image }}:latest
 
-      - name: Upload Actions artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Actions artifact
+        uses: actions/upload-artifact@v7
         with:
           name: homectl-${{ steps.vars.outputs.version }}
           path: dist/*
@@ -82,24 +90,16 @@ jobs:
           VERSION: ${{ steps.vars.outputs.version }}
         shell: bash
         run: |
-          if gh release view "$VERSION" \
-            --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-
-            echo "Release $VERSION already exists, replacing assets..."
-
+          if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $VERSION already exists; replacing assets"
             gh release upload "$VERSION" dist/* \
               --repo "$GITHUB_REPOSITORY" \
               --clobber
-
           else
-
-            echo "Creating release $VERSION..."
-
             gh release create "$VERSION" dist/* \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "HomeCTL $VERSION" \
               --generate-notes \
               --latest
-
           fi
