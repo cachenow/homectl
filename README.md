@@ -340,9 +340,11 @@ systemctl start homectl-agent
 
 # 三、Web Terminal
 
-终端使用 `@xterm/xterm 6.0.0` + `@xterm/addon-fit 0.10.0`。打开终端时会根据实际浏览器容器自动计算 cols/rows，并同步调整 Agent 侧 PTY。浏览器窗口变化、终端最大化/还原时也会自动重新适配，因此 `htop`、`vim`、`tmux` 等全屏 TUI 程序可以正常使用整个可见终端区域。
+终端使用 `@xterm/xterm 6.0.0` + `@xterm/addon-fit 0.11.0`。打开终端时会根据实际浏览器容器自动计算 cols/rows，并同步调整 Agent 侧 PTY。浏览器窗口变化、终端最大化/还原时也会自动重新适配，因此 `htop`、`vim`、`tmux` 等全屏 TUI 程序可以正常使用整个可见终端区域。
 
 终端默认以中等尺寸居中打开；可拖动标题栏移动窗口，可拖动右下角调整窗口大小，右上角仍提供 **最大化** / **关闭**。窗口移动不会影响 PTY，缩放、浏览器尺寸变化以及最大化/还原都会通过 FitAddon 自动重新计算 cols/rows 并同步给 Agent。移动端保持全屏显示，避免小屏幕上的拖动/缩放操作影响可用性。
+
+打开终端时，浏览器会先完成一次 FitAddon 布局计算，再把初始 `cols/rows` 随 WebSocket URL 一起发送给 Server；Server 使用该尺寸直接创建 Agent PTY。连接建立后仍会通过 `term_resize` 持续同步尺寸。这样可避免外层窗口已经变大、远端 shell 仍停留在 80×24/100×30 的竞态问题。
 
 # 四、文件浏览器
 
@@ -457,7 +459,7 @@ Server 启动时会把旧 JSON 中的 Device ID、独立 Device Token、LastSeen
 
 ---
 
-# 七、建议的安全边界
+# 八、建议的安全边界
 
 HomeCTL Agent 以 root 运行，并且可以执行命令、开 PTY、可选读写文件，因此 Web 控制台本身相当于主机 root 控制入口。
 
