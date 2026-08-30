@@ -7,14 +7,17 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@6.0.0/css/xterm.css">
   <style>
     :root{color-scheme:dark;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0d1117;color:#e6edf3}
-    *{box-sizing:border-box}body{margin:0;background:#0d1117}.wrap{max-width:1180px;margin:auto;padding:24px}.bar,.row{display:flex;gap:10px;align-items:center}.bar{justify-content:space-between}.row{flex-wrap:wrap}.grow{flex:1}.hidden{display:none!important}
-    button,input{background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:8px;padding:9px 12px;font:inherit}button{cursor:pointer}button:hover{background:#21262d}button.primary{border-color:#238636;background:#238636}button.danger{border-color:#da3633}.small{padding:6px 9px;font-size:13px}.muted{color:#8b949e}.online{color:#3fb950}.offline{color:#f85149}.warn{color:#d29922}
-    .login{max-width:440px;margin:12vh auto}.login-card,.card,.modal-box{background:#161b22;border:1px solid #30363d;border-radius:12px}.login-card{padding:24px}.stack{display:grid;gap:10px}.card{margin:12px 0;padding:16px}.card h3{margin:0 0 4px}.meta{display:flex;gap:12px;flex-wrap:wrap;margin:9px 0;color:#8b949e;font-size:14px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    *{box-sizing:border-box}body{margin:0;background:#0d1117}.wrap{max-width:1320px;margin:auto;padding:24px}.bar,.row{display:flex;gap:10px;align-items:center}.bar{justify-content:space-between}.row{flex-wrap:wrap}.grow{flex:1}.hidden{display:none!important}
+    button,input{background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:8px;padding:9px 12px;font:inherit}button{cursor:pointer}button:hover{background:#21262d}button:disabled{cursor:not-allowed;opacity:.45}button.primary{border-color:#238636;background:#238636}button.danger{border-color:#da3633}.small{padding:6px 9px;font-size:13px}.muted{color:#8b949e}.online{color:#3fb950}.offline{color:#f85149}.warn{color:#d29922}
+    .login{max-width:440px;margin:12vh auto}.login-card,.card,.modal-box{background:#161b22;border:1px solid #30363d;border-radius:12px}.login-card{padding:24px}.stack{display:grid;gap:10px}.card{margin:14px 0;padding:18px}.card h3{margin:0}.device-card{overflow:hidden}.device-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.device-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.device-id{font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;color:#6e7681;margin-top:4px}.status-pill{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#0d1117;border:1px solid #30363d;font-size:13px;font-weight:600;white-space:nowrap}
+    .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}.metric{background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:12px}.metric-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.metric-label{color:#8b949e;font-size:13px}.metric-value{font-size:18px;font-weight:650}.metric-sub{color:#8b949e;font-size:12px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.progress{height:7px;background:#21262d;border-radius:999px;overflow:hidden;margin-top:9px}.progress>i{display:block;height:100%;width:var(--pct,0%);border-radius:999px;transition:width .35s ease}.metric.cpu .progress>i{background:#58a6ff}.metric.mem .progress>i{background:#3fb950}.metric.disk .progress>i{background:#a371f7}
+    .details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#30363d;border:1px solid #30363d;border-radius:10px;overflow:hidden}.detail{background:#161b22;padding:10px 12px;min-width:0}.detail-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6e7681;margin-bottom:4px}.detail-value{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.detail.wide{grid-column:span 2}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #21262d}
     .result{position:relative;margin-top:12px;border:1px solid #30363d;background:#0d1117;border-radius:9px;padding:11px 38px 11px 11px;max-height:290px;overflow:auto}.result.error{border-color:#da3633}.result pre{white-space:pre-wrap;word-break:break-word;margin:0;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.result-close{position:absolute;right:7px;top:6px;border:0;background:transparent;padding:4px 7px;color:#8b949e}
     .modal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:18px;z-index:20}.modal-box{width:min(720px,96vw);max-height:90vh;overflow:auto;padding:18px}.modal-wide{width:min(1100px,97vw)}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.modal-head h2{margin:0}.section{padding:12px 0;border-top:1px solid #30363d}.section:first-of-type{border-top:0}.section h3{margin:0 0 10px}.field{display:grid;gap:5px;margin:8px 0}.field label{font-size:13px;color:#8b949e}.field input{width:100%}.code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px;word-break:break-all}.notice{padding:9px 11px;background:#0d1117;border:1px solid #30363d;border-radius:8px;margin:8px 0}
-    .term-box{width:min(1120px,97vw);height:min(780px,92vh);background:#0d1117;border:1px solid #30363d;border-radius:10px;display:flex;flex-direction:column}.term-head{padding:10px;display:flex;justify-content:space-between}.terminal{flex:1;min-height:0;padding:8px}
+    #termModal{padding:12px}.term-box{width:calc(100vw - 24px);height:calc(100vh - 24px);background:#0d1117;border:1px solid #30363d;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 60px #0008}.term-box.maximized{position:fixed;inset:0;width:100vw;height:100vh;border:0;border-radius:0}.term-head{height:48px;flex:0 0 48px;padding:7px 10px 7px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #21262d;background:#161b22}.term-head-actions{display:flex;gap:7px}.terminal{flex:1;min-width:0;min-height:0;padding:8px 10px;background:#0d1117;overflow:hidden}.terminal .xterm{height:100%}.terminal .xterm-viewport{overflow-y:auto!important}
     .file-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.file-toolbar input[type=text]{min-width:260px;flex:1}.file-table{width:100%;border-collapse:collapse}.file-table th,.file-table td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}.file-name{cursor:pointer}.file-name:hover{text-decoration:underline}.file-actions{white-space:nowrap}.file-actions button{margin-right:4px}.badge{display:inline-block;padding:2px 7px;border:1px solid #30363d;border-radius:99px;font-size:12px;color:#8b949e}
-    @media(max-width:700px){.wrap{padding:14px}.bar{align-items:flex-start}.bar .row{justify-content:flex-end}.meta{display:grid;gap:4px}.file-table .optional{display:none}}
+    @media(max-width:900px){.metrics{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,minmax(0,1fr))}.detail.wide{grid-column:span 2}}
+    @media(max-width:700px){.wrap{padding:14px}.bar{align-items:flex-start}.bar .row{justify-content:flex-end}.device-head{gap:10px}.details{grid-template-columns:1fr 1fr}.file-table .optional{display:none}#termModal{padding:0}.term-box{width:100vw;height:100vh;border-radius:0;border:0}}
   </style>
 </head>
 <body>
@@ -68,15 +71,17 @@
   <div style="overflow:auto"><table class="file-table"><thead><tr><th>名称</th><th class="optional">大小</th><th class="optional">修改时间</th><th>操作</th></tr></thead><tbody id="fileRows"></tbody></table></div>
 </div></div>
 
-<div id="termModal" class="modal hidden"><div class="term-box"><div class="term-head"><strong id="termTitle">Terminal</strong><button onclick="closeTerminal()">关闭</button></div><div id="terminal" class="terminal"></div></div></div>
+<div id="termModal" class="modal hidden"><div id="termBox" class="term-box"><div class="term-head"><strong id="termTitle">Terminal</strong><div class="term-head-actions"><button id="termSizeBtn" class="small" onclick="toggleTerminalMaximize()">最大化</button><button class="small" onclick="closeTerminal()">关闭</button></div></div><div id="terminal" class="terminal"></div></div></div>
 
 <script type="module">
 import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@6.0.0/+esm';
+import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
 window.TerminalCtor = Terminal;
+window.FitAddonCtor = FitAddon;
 </script>
 <script>
 const $=s=>document.querySelector(s);
-let term=null, termWS=null, devices=[], settings={web_refresh_ms:5000,ui_result_ttl_ms:20000}, refreshTimer=null;
+let term=null, termWS=null, termFit=null, termResizeObserver=null, devices=[], settings={web_refresh_ms:5000,ui_result_ttl_ms:20000}, refreshTimer=null;
 let account=null, pendingTOTPSecret='', fileDeviceID='', currentFilePath='/';
 const deviceResults={}; const resultTimers={};
 function escapeHTML(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -84,6 +89,10 @@ function humanBytes(n){if(n===0)return '0 B';if(!n)return '-';const u=['B','KB',
 function humanUptime(s){if(!s)return '-';const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return `${d}d ${h}h ${m}m`}
 function humanAgo(ts){if(!ts)return '从未';const sec=Math.max(0,Math.floor(Date.now()/1000-ts));if(sec<60)return `${sec} 秒前`;if(sec<3600)return `${Math.floor(sec/60)} 分钟前`;if(sec<86400)return `${Math.floor(sec/3600)} 小时前`;return `${Math.floor(sec/86400)} 天前`}
 function fmtDate(ts){return ts?new Date(ts*1000).toLocaleString():'-'}
+function clampPct(n){n=Number(n);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0}
+function pctText(n){return Number.isFinite(Number(n))&&Number(n)>=0?`${Number(n).toFixed(1)}%`:'采集中'}
+function progressHTML(cls,label,pct,sub){const p=clampPct(pct);return `<div class="metric ${cls}"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-value">${pctText(pct)}</span></div><div class="progress"><i style="--pct:${p}%"></i></div><div class="metric-sub">${escapeHTML(sub)}</div></div>`}
+function detailHTML(label,value,wide=false){return `<div class="detail${wide?' wide':''}"><div class="detail-label">${label}</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div></div>`}
 function closeModal(id){$('#'+id).classList.add('hidden')}
 async function api(url,opt={}){opt.headers={...(opt.headers||{}),'Content-Type':'application/json'};const r=await fetch(url,opt);const text=await r.text();if(r.status===401&&url!='/api/login'){showLogin();throw new Error('unauthorized')}if(!r.ok){let msg=text||r.statusText;try{const j=JSON.parse(text);msg=j.error||msg}catch{}throw new Error(msg.trim())}try{return JSON.parse(text)}catch{return text}}
 function showLogin(){clearInterval(refreshTimer);refreshTimer=null;$('#login').classList.remove('hidden');$('#app').classList.add('hidden')}
@@ -95,11 +104,70 @@ function resultHTML(d,idx){const r=deviceResults[d.id];if(!r)return '';return `<
 function setResult(id,text,error=false){deviceResults[id]={text,error};if(resultTimers[id])clearTimeout(resultTimers[id]);const ttl=settings.ui_result_ttl_ms||0;if(ttl>0)resultTimers[id]=setTimeout(()=>closeResult(id),ttl);renderDevices()}
 window.closeResult=id=>{delete deviceResults[id];if(resultTimers[id]){clearTimeout(resultTimers[id]);delete resultTimers[id]}renderDevices()}
 async function loadDevices(){try{devices=await api('/api/devices');renderDevices()}catch(e){if(e.message!=='unauthorized')console.error(e)}}
-function renderDevices(){const root=$('#devices');if(!devices.length){root.innerHTML='<div class="card muted">暂无设备。点击右上角“添加设备”生成一次性 Agent Token。</div>';return}root.innerHTML=devices.map((d,idx)=>{const i=d.info||{};const status=d.online?'<span class="online">● 在线</span>':'<span class="offline">● 离线</span>';return `<div class="card"><div class="bar"><div><h3>${escapeHTML(d.name||d.id)}</h3><span class="muted">${escapeHTML(d.id)}</span></div>${status}</div><div class="meta"><span>${escapeHTML(i.os||'-')} · ${escapeHTML(i.arch||'-')}</span><span>Load ${escapeHTML(i.load1||'-')}</span><span>内存 ${humanBytes((i.mem_total||0)-(i.mem_available||0))} / ${humanBytes(i.mem_total)}</span><span>磁盘 ${humanBytes((i.disk_total||0)-(i.disk_free||0))} / ${humanBytes(i.disk_total)}</span><span>运行 ${humanUptime(i.uptime_sec)}</span><span>最后心跳 ${humanAgo(d.last_seen)}</span></div><div class="muted" style="font-size:13px">IP: ${(i.ip_addrs||[]).map(escapeHTML).join(', ')||'-'} · Kernel: ${escapeHTML(i.kernel||'-')} · Agent: ${escapeHTML(i.agent_version||'-')}</div><div class="actions">${settings.allow_exec?`<button ${d.online?'':'disabled'} onclick="runCmd(${idx})">执行命令</button>`:''}${settings.allow_terminal?`<button ${d.online?'':'disabled'} onclick="openTerminal(${idx})">终端</button>`:''}${settings.file_browser_enabled?`<button ${d.online?'':'disabled'} onclick="openFiles(${idx})">文件</button>`:''}<button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'reboot')">重启</button><button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'poweroff')">关机</button></div>${resultHTML(d,idx)}</div>`}).join('')}
+function renderDevices(){
+  const root=$('#devices');
+  if(!devices.length){root.innerHTML='<div class="card muted">暂无设备。点击右上角“添加设备”生成一次性 Agent Token。</div>';return}
+  root.innerHTML=devices.map((d,idx)=>{
+    const i=d.info||{};
+    const memUsed=Math.max(0,(i.mem_total||0)-(i.mem_available||0));
+    const diskUsed=Math.max(0,(i.disk_total||0)-(i.disk_free||0));
+    const memPct=i.mem_total?memUsed/i.mem_total*100:0;
+    const diskPct=i.disk_total?diskUsed/i.disk_total*100:0;
+    const cpuPct=Number(i.cpu_usage);
+    const status=d.online?'<span class="status-pill online">● 在线</span>':'<span class="status-pill offline">● 离线</span>';
+    const cpuSub=`${i.cpu_cores||'?'} 核 · Load ${i.load1||'-'}`;
+    const metrics=progressHTML('cpu','CPU',cpuPct,cpuSub)+progressHTML('mem','内存',memPct,`${humanBytes(memUsed)} / ${humanBytes(i.mem_total)}`)+progressHTML('disk','磁盘',diskPct,`${humanBytes(diskUsed)} / ${humanBytes(i.disk_total)}`);
+    const details=[
+      detailHTML('系统',i.os||'-',true),detailHTML('主机名',i.hostname||'-'),detailHTML('架构',i.arch||'-'),detailHTML('运行时间',humanUptime(i.uptime_sec)),
+      detailHTML('CPU 型号',i.cpu_model||'-',true),detailHTML('Kernel',i.kernel||'-',true),
+      detailHTML('IP',(i.ip_addrs||[]).join(', ')||'-',true),detailHTML('Agent',i.agent_version||'-'),detailHTML('最后心跳',humanAgo(d.last_seen))
+    ].join('');
+    const actions=`<div class="actions">${settings.allow_exec?`<button ${d.online?'':'disabled'} onclick="runCmd(${idx})">执行命令</button>`:''}${settings.allow_terminal?`<button ${d.online?'':'disabled'} onclick="openTerminal(${idx})">终端</button>`:''}${settings.file_browser_enabled?`<button ${d.online?'':'disabled'} onclick="openFiles(${idx})">文件</button>`:''}<button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'reboot')">重启</button><button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'poweroff')">关机</button></div>`;
+    return `<div class="card device-card"><div class="device-head"><div><div class="device-title"><h3>${escapeHTML(d.name||d.id)}</h3>${status}</div><div class="device-id">${escapeHTML(d.id)}</div></div></div><div class="metrics">${metrics}</div><div class="details">${details}</div>${actions}${resultHTML(d,idx)}</div>`;
+  }).join('');
+}
 window.runCmd=async idx=>{const d=devices[idx];if(!d)return;const cmd=prompt('输入要以 root 执行的命令');if(!cmd)return;setResult(d.id,`$ ${cmd}\n\n执行中…`);const started=performance.now();try{const r=await api(`/api/device/${encodeURIComponent(d.id)}/exec`,{method:'POST',body:JSON.stringify({command:cmd})});const elapsed=((performance.now()-started)/1000).toFixed(2);let text=`$ ${cmd}\n\n${r.data||'(无输出)'}`;if(r.error)text+=`\n\n执行失败 · 退出码 ${r.exit_code ?? -1} · ${elapsed}s\n${r.error}`;else text+=`\n\n执行完成 · 退出码 ${r.exit_code||0} · ${elapsed}s`;setResult(d.id,text,!!r.error)}catch(e){setResult(d.id,`$ ${cmd}\n\n请求失败\n${e.message}`,true)}}
 window.action=async(idx,act)=>{const d=devices[idx];if(!d)return;const label=act==='reboot'?'重启':'关机';if(!confirm(`确认${label} ${d.name||d.id}？`))return;setResult(d.id,`正在发送${label}命令…`);try{await api(`/api/device/${encodeURIComponent(d.id)}/action`,{method:'POST',body:JSON.stringify({action:act})});setResult(d.id,`${label}命令已被 Agent 接受。\n等待设备停止心跳后会自动显示离线。`);setTimeout(loadDevices,1000)}catch(e){setResult(d.id,`${label}命令发送失败：${e.message}`,true)}}
-window.openTerminal=idx=>{const d=devices[idx];if(!d)return;$('#termTitle').textContent=`Terminal · ${d.name||d.id}`;$('#termModal').classList.remove('hidden');$('#terminal').innerHTML='';term=new window.TerminalCtor({cursorBlink:true,convertEol:true,fontSize:14});term.open($('#terminal'));const proto=location.protocol==='https:'?'wss':'ws';termWS=new WebSocket(`${proto}://${location.host}/ws/terminal/${encodeURIComponent(d.id)}`);termWS.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='data')term.write(Uint8Array.from(atob(m.data),c=>c.charCodeAt(0)));else if(m.type==='exit')term.write(`\r\n[terminal closed] ${m.error||''}`)};term.onData(data=>{if(termWS?.readyState===1)termWS.send(JSON.stringify({type:'input',data:btoa(unescape(encodeURIComponent(data))) }))});term.onResize(sz=>{if(termWS?.readyState===1)termWS.send(JSON.stringify({type:'resize',cols:sz.cols,rows:sz.rows}))})}
-window.closeTerminal=()=>{try{termWS?.close()}catch{}try{term?.dispose()}catch{}termWS=null;term=null;$('#termModal').classList.add('hidden')}
+function fitTerminal(){
+  if(!term||!termFit)return;
+  try{termFit.fit()}catch{}
+  if(termWS?.readyState===1&&term.cols&&term.rows){
+    termWS.send(JSON.stringify({type:'resize',cols:term.cols,rows:term.rows}));
+  }
+}
+window.openTerminal=idx=>{
+  const d=devices[idx];if(!d)return;
+  if(!window.TerminalCtor||!window.FitAddonCtor){alert('终端组件仍在加载');return}
+  $('#termTitle').textContent=`Terminal · ${d.name||d.id}`;
+  $('#termBox').classList.remove('maximized');
+  $('#termSizeBtn').textContent='最大化';
+  $('#termModal').classList.remove('hidden');
+  $('#terminal').innerHTML='';
+  term=new window.TerminalCtor({cursorBlink:true,convertEol:false,fontSize:14,lineHeight:1.1,scrollback:5000,allowProposedApi:false});
+  termFit=new window.FitAddonCtor();
+  term.loadAddon(termFit);
+  term.open($('#terminal'));
+  requestAnimationFrame(()=>{fitTerminal();term.focus()});
+  const proto=location.protocol==='https:'?'wss':'ws';
+  termWS=new WebSocket(`${proto}://${location.host}/ws/terminal/${encodeURIComponent(d.id)}`);
+  termWS.onopen=()=>{requestAnimationFrame(()=>{fitTerminal();term.focus()})};
+  termWS.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='data')term.write(Uint8Array.from(atob(m.data),c=>c.charCodeAt(0)));else if(m.type==='exit')term.write(`\r\n[terminal closed] ${m.error||''}\r\n`)};
+  termWS.onclose=()=>term&&term.write('\r\n[连接已关闭]\r\n');
+  term.onData(data=>{if(termWS?.readyState===1)termWS.send(JSON.stringify({type:'input',data:btoa(unescape(encodeURIComponent(data))) }))});
+  termResizeObserver=new ResizeObserver(()=>requestAnimationFrame(fitTerminal));
+  termResizeObserver.observe($('#terminal'));
+  window.addEventListener('resize',fitTerminal);
+};
+window.toggleTerminalMaximize=()=>{const max=$('#termBox').classList.toggle('maximized');$('#termSizeBtn').textContent=max?'还原':'最大化';requestAnimationFrame(fitTerminal)};
+window.closeTerminal=()=>{
+  window.removeEventListener('resize',fitTerminal);
+  try{termResizeObserver?.disconnect()}catch{}
+  termResizeObserver=null;
+  try{termWS?.close()}catch{}
+  try{term?.dispose()}catch{}
+  termWS=null;term=null;termFit=null;
+  $('#termModal').classList.add('hidden');
+};
 window.openAccount=async()=>{try{account=await api('/api/account');$('#accountUsername').value=account.username;$('#totpStatus').textContent=account.totp_enabled?'已启用。登录时需要 6 位动态验证码。':'未启用。';$('#totpSetupBtn').classList.toggle('hidden',account.totp_enabled);$('#totpDisableBtn').classList.toggle('hidden',!account.totp_enabled);$('#totpDisableCodeWrap').classList.toggle('hidden',!account.totp_enabled);$('#totpSetup').classList.add('hidden');$('#accountMsg').textContent='';$('#accountModal').classList.remove('hidden')}catch(e){alert(e.message)}}
 window.changeUsername=async()=>{try{await api('/api/account/username',{method:'POST',body:JSON.stringify({username:$('#accountUsername').value,current_password:$('#accountUsernamePassword').value})});await openAccount();$('#accountMsg').textContent='用户名已修改。'}catch(e){$('#accountMsg').textContent=e.message}}
 window.changePassword=async()=>{try{await api('/api/account/password',{method:'POST',body:JSON.stringify({current_password:$('#currentPassword').value,new_password:$('#newPassword').value})});closeModal('accountModal');alert('密码已修改，请重新登录。');showLogin()}catch(e){$('#accountMsg').textContent=e.message}}
