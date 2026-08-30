@@ -18,6 +18,11 @@
   "file_browser_root": "/",
   "file_transfer_chunk_bytes": 65536,
   "max_file_transfer_bytes": 1073741824,
+  "disk_exclude_device_prefixes": [
+    "/dev/loop",
+    "/dev/zram",
+    "/dev/ram"
+  ],
   "cloudflare_access": {
     "client_id": "",
     "client_secret": ""

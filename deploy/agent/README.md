@@ -29,6 +29,15 @@ handshake_timeout  15s
 write_timeout      10s
 ```
 
+
+存储信息分成两部分：物理容量直接读取 `/sys/class/block/*/size` 并按底层设备去重；文件系统使用率通过 `/proc/self/mountinfo` + `/sys/dev/block` + `statfs()` 汇总本地块设备。这样不会把 `/` 根分区的大小误当成整块磁盘容量。
+
+文件系统统计默认排除 loop/zram/ram；需要调整时可在 `config.json` 中设置：
+
+```json
+"disk_exclude_device_prefixes": ["/dev/loop", "/dev/zram", "/dev/ram"]
+```
+
 文件浏览器默认关闭，不会产生额外周期性文件系统负载。需要时设置：
 
 ```json
