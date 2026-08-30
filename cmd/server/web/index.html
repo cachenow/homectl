@@ -14,7 +14,7 @@
     .details{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:#30363d;border:1px solid #30363d;border-radius:10px;overflow:hidden}.detail{background:#161b22;padding:10px 12px;min-width:0}.detail-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6e7681;margin-bottom:4px}.detail-value{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.detail.half{grid-column:span 3}.detail.third{grid-column:span 2}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #21262d}
     .result{position:relative;margin-top:12px;border:1px solid #30363d;background:#0d1117;border-radius:9px;padding:11px 38px 11px 11px;max-height:290px;overflow:auto}.result.error{border-color:#da3633}.result pre{white-space:pre-wrap;word-break:break-word;margin:0;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.result-close{position:absolute;right:7px;top:6px;border:0;background:transparent;padding:4px 7px;color:#8b949e}
     .modal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:18px;z-index:20}.modal-box{width:min(720px,96vw);max-height:90vh;overflow:auto;padding:18px}.modal-wide{width:min(1100px,97vw)}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.modal-head h2{margin:0}.section{padding:12px 0;border-top:1px solid #30363d}.section:first-of-type{border-top:0}.section h3{margin:0 0 10px}.field{display:grid;gap:5px;margin:8px 0}.field label{font-size:13px;color:#8b949e}.field input{width:100%}.code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px;word-break:break-all}.notice{padding:9px 11px;background:#0d1117;border:1px solid #30363d;border-radius:8px;margin:8px 0}
-    #termModal{padding:12px}.term-box{position:absolute;width:min(1000px,calc(100vw - 48px));height:min(680px,calc(100vh - 72px));min-width:620px;min-height:360px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);resize:both;background:#0d1117;border:1px solid #30363d;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 60px #0008}.term-box.maximized{position:fixed;inset:0!important;width:100vw!important;height:100vh!important;min-width:0;min-height:0;max-width:none;max-height:none;resize:none;border:0;border-radius:0}.term-head{height:48px;flex:0 0 48px;padding:7px 10px 7px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #21262d;background:#161b22;cursor:move;user-select:none;touch-action:none}.term-head strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.term-head-actions{display:flex;gap:7px;flex:0 0 auto}.term-head-actions button{cursor:pointer}.terminal{flex:1;min-width:0;min-height:0;padding:8px 10px;background:#0d1117;overflow:hidden}.terminal .xterm{height:100%}.terminal .xterm-viewport{overflow-y:auto!important}
+    #termModal{padding:12px}.term-box{position:absolute;width:min(1000px,calc(100vw - 48px));height:min(680px,calc(100vh - 72px));min-width:620px;min-height:360px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);resize:both;background:#0d1117;border:1px solid #30363d;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 60px #0008}.term-box.maximized{position:fixed;inset:0!important;width:100vw!important;height:100vh!important;min-width:0;min-height:0;max-width:none;max-height:none;resize:none;border:0;border-radius:0}.term-head{height:48px;flex:0 0 48px;padding:7px 10px 7px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #21262d;background:#161b22;cursor:move;user-select:none;touch-action:none}.term-head strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.term-head-actions{display:flex;gap:7px;flex:0 0 auto}.term-head-actions button{cursor:pointer}.terminal{flex:1;min-width:0;min-height:0;padding:8px 10px;background:#0d1117;overflow:hidden}.terminal .xterm{width:100%;height:100%}.terminal .xterm-viewport{overflow-y:auto!important}
     .file-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.file-toolbar input[type=text]{min-width:260px;flex:1}.file-table{width:100%;border-collapse:collapse}.file-table th,.file-table td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}.file-name{cursor:pointer}.file-name:hover{text-decoration:underline}.file-actions{white-space:nowrap}.file-actions button{margin-right:4px}.badge{display:inline-block;padding:2px 7px;border:1px solid #30363d;border-radius:99px;font-size:12px;color:#8b949e}
     @media(max-width:900px){.metrics{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,minmax(0,1fr))}.detail.half,.detail.third{grid-column:auto}}
     @media(max-width:700px){.wrap{padding:14px}.bar{align-items:flex-start}.bar .row{justify-content:flex-end}.device-head{gap:10px}.details{grid-template-columns:1fr 1fr}.file-table .optional{display:none}#termModal{padding:0}.term-box{position:fixed;inset:0!important;width:100vw!important;height:100vh!important;min-width:0;min-height:0;max-width:none;max-height:none;resize:none;border-radius:0;border:0}.term-head{cursor:default}}
@@ -75,7 +75,7 @@
 
 <script type="module">
 import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@6.0.0/+esm';
-import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
+import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.11.0/+esm';
 window.TerminalCtor = Terminal;
 window.FitAddonCtor = FitAddon;
 </script>
@@ -142,11 +142,17 @@ function renderDevices(){
 window.runCmd=async idx=>{const d=devices[idx];if(!d)return;const cmd=prompt('输入要以 root 执行的命令');if(!cmd)return;setResult(d.id,`$ ${cmd}\n\n执行中…`);const started=performance.now();try{const r=await api(`/api/device/${encodeURIComponent(d.id)}/exec`,{method:'POST',body:JSON.stringify({command:cmd})});const elapsed=((performance.now()-started)/1000).toFixed(2);let text=`$ ${cmd}\n\n${r.data||'(无输出)'}`;if(r.error)text+=`\n\n执行失败 · 退出码 ${r.exit_code ?? -1} · ${elapsed}s\n${r.error}`;else text+=`\n\n执行完成 · 退出码 ${r.exit_code||0} · ${elapsed}s`;setResult(d.id,text,!!r.error)}catch(e){setResult(d.id,`$ ${cmd}\n\n请求失败\n${e.message}`,true)}}
 window.action=async(idx,act)=>{const d=devices[idx];if(!d)return;const label=act==='reboot'?'重启':'关机';if(!confirm(`确认${label} ${d.name||d.id}？`))return;setResult(d.id,`正在发送${label}命令…`);try{await api(`/api/device/${encodeURIComponent(d.id)}/action`,{method:'POST',body:JSON.stringify({action:act})});setResult(d.id,`${label}命令已被 Agent 接受。\n等待设备停止心跳后会自动显示离线。`);setTimeout(loadDevices,1000)}catch(e){setResult(d.id,`${label}命令发送失败：${e.message}`,true)}}
 function fitTerminal(){
-  if(!term||!termFit)return;
-  try{termFit.fit()}catch{}
-  if(termWS?.readyState===1&&term.cols&&term.rows){
+  if(!term||!termFit)return false;
+  try{
+    termFit.fit();
+  }catch(e){
+    console.error('terminal fit failed',e);
+    return false;
+  }
+  if(termWS?.readyState===1&&term.cols>0&&term.rows>0){
     termWS.send(JSON.stringify({type:'resize',cols:term.cols,rows:term.rows}));
   }
+  return term.cols>0&&term.rows>0;
 }
 function terminalIsMobile(){return window.matchMedia('(max-width:700px)').matches}
 function clampTerminalPosition(left,top,width,height){
@@ -213,10 +219,22 @@ window.openTerminal=idx=>{
   termFit=new window.FitAddonCtor();
   term.loadAddon(termFit);
   term.open($('#terminal'));
-  requestAnimationFrame(()=>{fitTerminal();term.focus()});
+
+  // Force a synchronous layout pass before opening the remote PTY. This gives
+  // the server the real initial terminal dimensions instead of a fixed 80x24
+  // or 100x30 fallback, avoiding a resize race with full-screen TUI programs.
+  fitTerminal();
+  const initialCols=Math.max(20,term.cols||100);
+  const initialRows=Math.max(8,term.rows||30);
+
   const proto=location.protocol==='https:'?'wss':'ws';
-  termWS=new WebSocket(`${proto}://${location.host}/ws/terminal/${encodeURIComponent(d.id)}`);
-  termWS.onopen=()=>{requestAnimationFrame(()=>{fitTerminal();term.focus()})};
+  const termURL=`${proto}://${location.host}/ws/terminal/${encodeURIComponent(d.id)}?cols=${initialCols}&rows=${initialRows}`;
+  termWS=new WebSocket(termURL);
+  termWS.onopen=()=>{
+    fitTerminal();
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{fitTerminal();term.focus()}));
+    setTimeout(()=>fitTerminal(),120);
+  };
   termWS.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='data')term.write(Uint8Array.from(atob(m.data),c=>c.charCodeAt(0)));else if(m.type==='exit')term.write(`\r\n[terminal closed] ${m.error||''}\r\n`)};
   termWS.onclose=()=>term&&term.write('\r\n[连接已关闭]\r\n');
   term.onData(data=>{if(termWS?.readyState===1)termWS.send(JSON.stringify({type:'input',data:btoa(unescape(encodeURIComponent(data))) }))});
