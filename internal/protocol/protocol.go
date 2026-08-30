@@ -36,22 +36,24 @@ type FileEntry struct {
 }
 
 type SystemInfo struct {
-	Hostname   string   `json:"hostname"`
-	OS         string   `json:"os"`
-	Kernel     string   `json:"kernel"`
-	Arch       string   `json:"arch"`
-	CPUModel   string   `json:"cpu_model"`
-	CPUCores   int      `json:"cpu_cores"`
-	CPUUsage   float64  `json:"cpu_usage"`
-	Load1      string   `json:"load1"`
-	MemTotal   uint64   `json:"mem_total"`
-	MemAvail   uint64   `json:"mem_available"`
-	DiskTotal  uint64   `json:"disk_total"`
-	DiskFree   uint64   `json:"disk_free"`
-	UptimeSec  uint64   `json:"uptime_sec"`
-	IPAddrs    []string `json:"ip_addrs"`
-	AgentVer   string   `json:"agent_version"`
-	ReportedAt int64    `json:"reported_at"`
+	Hostname          string   `json:"hostname"`
+	OS                string   `json:"os"`
+	Kernel            string   `json:"kernel"`
+	Arch              string   `json:"arch"`
+	CPUModel          string   `json:"cpu_model"`
+	CPUCores          int      `json:"cpu_cores"`
+	CPUUsage          float64  `json:"cpu_usage"`
+	Load1             string   `json:"load1"`
+	MemTotal          uint64   `json:"mem_total"`
+	MemAvail          uint64   `json:"mem_available"`
+	DiskTotal         uint64   `json:"disk_total"`
+	DiskFree          uint64   `json:"disk_free"`
+	DiskPhysicalTotal uint64   `json:"disk_physical_total"`
+	DiskPhysicalCount int      `json:"disk_physical_count"`
+	UptimeSec         uint64   `json:"uptime_sec"`
+	IPAddrs           []string `json:"ip_addrs"`
+	AgentVer          string   `json:"agent_version"`
+	ReportedAt        int64    `json:"reported_at"`
 }
 
 func MarshalSystemInfo(v *SystemInfo) ([]byte, error)   { return json.Marshal(v) }
