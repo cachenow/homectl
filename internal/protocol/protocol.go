@@ -41,6 +41,8 @@ type SystemInfo struct {
 	Kernel     string   `json:"kernel"`
 	Arch       string   `json:"arch"`
 	CPUModel   string   `json:"cpu_model"`
+	CPUCores   int      `json:"cpu_cores"`
+	CPUUsage   float64  `json:"cpu_usage"`
 	Load1      string   `json:"load1"`
 	MemTotal   uint64   `json:"mem_total"`
 	MemAvail   uint64   `json:"mem_available"`
