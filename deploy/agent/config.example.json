@@ -1,0 +1,22 @@
+{
+  "server": "wss://panel.example.com/agent/ws",
+  "name": "",
+  "enroll_token": "CHANGE_ME_TO_THE_SERVER_ENROLL_TOKEN",
+  "state_file": "state.json",
+  "heartbeat_interval": "15s",
+  "reconnect_min": "1s",
+  "reconnect_max": "30s",
+  "dial_timeout": "15s",
+  "command_timeout": "30s",
+  "max_command_output_bytes": 524288,
+  "shell": "/bin/bash",
+  "exec_enabled": true,
+  "terminal_enabled": true,
+  "cloudflare_access": {
+    "client_id": "",
+    "client_secret": ""
+  },
+  "tls": {
+    "insecure_skip_verify": false
+  }
+}

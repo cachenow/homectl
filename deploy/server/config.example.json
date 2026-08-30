@@ -1,0 +1,10 @@
+{
+  "listen_addr": ":8080",
+  "database_path": "/data/homectl.json",
+  "admin_password": "CHANGE_ME_TO_A_LONG_RANDOM_PASSWORD",
+  "enroll_token": "CHANGE_ME_TO_A_DIFFERENT_LONG_RANDOM_TOKEN",
+  "cookie_secure": true,
+  "session_ttl": "24h",
+  "allow_exec": true,
+  "allow_terminal": true
+}

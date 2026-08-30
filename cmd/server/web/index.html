@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HomeCTL</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@6.0.0/css/xterm.css">
+  <style>
+    :root{color-scheme:dark;font-family:ui-sans-serif,system-ui;background:#0d1117;color:#e6edf3}
+    body{margin:0}.wrap{max-width:1200px;margin:auto;padding:24px}.bar{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    button,input{background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:7px;padding:8px 12px}button{cursor:pointer}button.danger{border-color:#da3633}.card{background:#161b22;border:1px solid #30363d;border-radius:10px;margin:12px 0;padding:16px}.muted{color:#8b949e}.online{color:#3fb950}.offline{color:#f85149}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.grow{flex:1}.login{max-width:420px;margin:15vh auto}.hidden{display:none!important}pre{white-space:pre-wrap}.term-modal{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center}.term-box{width:min(1100px,95vw);height:min(760px,90vh);background:#0d1117;border:1px solid #30363d;border-radius:10px;display:flex;flex-direction:column}.term-head{padding:10px;display:flex;justify-content:space-between}.terminal{flex:1;min-height:0;padding:8px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section id="login" class="login hidden">
+    <h1>HomeCTL</h1><p class="muted">登录控制台</p>
+    <div class="row"><input id="password" class="grow" type="password" placeholder="管理密码"><button onclick="login()">登录</button></div><p id="loginerr" class="offline"></p>
+  </section>
+  <section id="app" class="hidden">
+    <div class="bar"><div><h1 style="margin-bottom:0">HomeCTL</h1><span class="muted">Linux 设备控制台</span></div><button onclick="logout()">退出</button></div>
+    <div id="devices"></div>
+  </section>
+</div>
+<div id="termModal" class="term-modal hidden"><div class="term-box"><div class="term-head"><strong id="termTitle">Terminal</strong><button onclick="closeTerminal()">关闭</button></div><div id="terminal" class="terminal"></div></div></div>
+<script type="module">
+import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@6.0.0/+esm';
+window.TerminalCtor = Terminal;
+</script>
+<script>
+const $=s=>document.querySelector(s); let term=null, termWS=null, devices=[];
+function humanBytes(n){if(!n)return '-';const u=['B','KB','MB','GB','TB'];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++}return n.toFixed(i?1:0)+' '+u[i]}
+function humanUptime(s){if(!s)return '-';const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return `${d}d ${h}h ${m}m`}
+function escapeHTML(s=''){return s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+async function api(url,opt={}){opt.headers={...(opt.headers||{}),'Content-Type':'application/json'};const r=await fetch(url,opt);if(r.status===401){showLogin();throw new Error('unauthorized')}const text=await r.text();if(!r.ok)throw new Error(text||r.statusText);try{return JSON.parse(text)}catch{return text}}
+function showLogin(){$('#login').classList.remove('hidden');$('#app').classList.add('hidden')}
+function showApp(){$('#login').classList.add('hidden');$('#app').classList.remove('hidden')}
+window.login=async()=>{try{await api('/api/login',{method:'POST',body:JSON.stringify({password:$('#password').value})});$('#loginerr').textContent='';showApp();loadDevices()}catch(e){$('#loginerr').textContent='登录失败'}}
+window.logout=async()=>{try{await api('/api/logout',{method:'POST'})}catch{}showLogin()}
+async function loadDevices(){try{const ds=await api('/api/devices');devices=ds;showApp();$('#devices').innerHTML=ds.map((d,idx)=>{const i=d.info||{};return `<div class="card"><div class="bar"><div><strong>${escapeHTML(d.name||d.id)}</strong> <span class="${d.online?'online':'offline'}">● ${d.online?'在线':'离线'}</span><div class="muted">${escapeHTML(d.id)}</div></div><div>${i.os?escapeHTML(i.os):''}</div></div><p>内核 ${escapeHTML(i.kernel||'-')} · ${escapeHTML(i.arch||'-')} · 运行 ${humanUptime(i.uptime_sec)}</p><p>内存 ${humanBytes((i.mem_total||0)-(i.mem_available||0))} / ${humanBytes(i.mem_total)} · 磁盘可用 ${humanBytes(i.disk_free)} / ${humanBytes(i.disk_total)}</p><p class="muted">IP: ${(i.ip_addrs||[]).map(escapeHTML).join(', ')||'-'} · Load: ${escapeHTML(i.load1||'-')}</p><div class="row"><button ${d.online?'':'disabled'} onclick="runCmd(${idx})">执行命令</button><button ${d.online?'':'disabled'} onclick="openTerminal(${idx})">终端</button><button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'reboot')">重启</button><button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'poweroff')">关机</button></div><pre id="out-${idx}"></pre></div>`}).join('')||'<div class="card">暂无设备，启动一个 Agent 即会自动注册。</div>'}catch(e){if(e.message!=='unauthorized')console.error(e)}}
+window.action=async(idx,act)=>{const id=devices[idx]?.id;if(!id)return;if(!confirm(act==='reboot'?'确认重启？':'确认关机？'))return;try{await api(`/api/device/${encodeURIComponent(id)}/action`,{method:'POST',body:JSON.stringify({action:act})})}catch(e){alert(e.message)}}
+window.runCmd=async(idx)=>{const id=devices[idx]?.id;if(!id)return;const cmd=prompt('输入要以 root 执行的命令');if(!cmd)return;const out=$(`#out-${idx}`);out.textContent='执行中…';try{const r=await api(`/api/device/${encodeURIComponent(id)}/exec`,{method:'POST',body:JSON.stringify({command:cmd})});out.textContent=r.error?`ERROR: ${r.error}\n${r.data||''}`:(r.data||'(no output)')}catch(e){out.textContent=e.message}}
+function bytesToB64(bytes){let s='';for(const b of bytes)s+=String.fromCharCode(b);return btoa(s)}function b64ToBytes(s){const b=atob(s),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+window.openTerminal=(idx)=>{const d=devices[idx];if(!d)return;const id=d.id,name=d.name||d.id;if(!window.TerminalCtor){alert('终端组件仍在加载');return}$('#termModal').classList.remove('hidden');$('#termTitle').textContent=`Terminal · ${name}`;$('#terminal').innerHTML='';term=new window.TerminalCtor({cursorBlink:true,fontSize:14,convertEol:false,scrollback:5000});term.open($('#terminal'));const scheme=location.protocol==='https:'?'wss':'ws';termWS=new WebSocket(`${scheme}://${location.host}/ws/terminal/${encodeURIComponent(id)}`);termWS.onopen=()=>{resizeTerm();term.focus()};termWS.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='data')term.write(new TextDecoder().decode(b64ToBytes(m.data)));else if(m.type==='exit')term.write(`\r\n[session exited] ${m.error||''}\r\n`)};termWS.onclose=()=>term&&term.write('\r\n[连接已关闭]\r\n');term.onData(d=>{if(termWS?.readyState===1)termWS.send(JSON.stringify({type:'input',data:bytesToB64(new TextEncoder().encode(d))}))});window.addEventListener('resize',resizeTerm)}
+function resizeTerm(){if(!term||!termWS||termWS.readyState!==1)return;const el=$('#terminal'),cols=Math.max(40,Math.floor(el.clientWidth/8.5)),rows=Math.max(10,Math.floor(el.clientHeight/18));term.resize(cols,rows);termWS.send(JSON.stringify({type:'resize',cols,rows}))}
+window.closeTerminal=()=>{window.removeEventListener('resize',resizeTerm);try{termWS?.close()}catch{}try{term?.dispose()}catch{}termWS=null;term=null;$('#termModal').classList.add('hidden')}
+loadDevices();setInterval(()=>{if(!$('#app').classList.contains('hidden'))loadDevices()},5000);
+</script>
+</body></html>

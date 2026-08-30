@@ -1,0 +1,22 @@
+services:
+  homectl:
+    image: __IMAGE__:__TAG__
+    restart: unless-stopped
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./data:/data
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on:
+      - homectl
+    network_mode: "service:homectl"
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - PASTE_YOUR_CLOUDFLARE_TUNNEL_TOKEN_HERE

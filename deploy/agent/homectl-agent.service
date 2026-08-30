@@ -1,0 +1,16 @@
+[Unit]
+Description=HomeCTL Linux Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/homectl-agent
+ExecStart=/opt/homectl-agent/homectl-agent
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
