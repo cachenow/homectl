@@ -10,27 +10,28 @@ import (
 )
 
 type agentConfig struct {
-	Server                 string                 `json:"server"`
-	Name                   string                 `json:"name"`
-	EnrollToken            string                 `json:"enroll_token"`
-	StateFile              string                 `json:"state_file"`
-	HeartbeatInterval      string                 `json:"heartbeat_interval"`
-	ReconnectMin           string                 `json:"reconnect_min"`
-	ReconnectMax           string                 `json:"reconnect_max"`
-	DialTimeout            string                 `json:"dial_timeout"`
-	HandshakeTimeout       string                 `json:"handshake_timeout"`
-	WriteTimeout           string                 `json:"write_timeout"`
-	CommandTimeout         string                 `json:"command_timeout"`
-	MaxCommandOutputBytes  int                    `json:"max_command_output_bytes"`
-	Shell                  string                 `json:"shell"`
-	ExecEnabled            bool                   `json:"exec_enabled"`
-	TerminalEnabled        bool                   `json:"terminal_enabled"`
-	FileBrowserEnabled     bool                   `json:"file_browser_enabled"`
-	FileBrowserRoot        string                 `json:"file_browser_root"`
-	FileTransferChunkBytes int                    `json:"file_transfer_chunk_bytes"`
-	MaxFileTransferBytes   int64                  `json:"max_file_transfer_bytes"`
-	CloudflareAccess       cloudflareAccessConfig `json:"cloudflare_access"`
-	TLS                    tlsConfig              `json:"tls"`
+	Server                    string                 `json:"server"`
+	Name                      string                 `json:"name"`
+	EnrollToken               string                 `json:"enroll_token"`
+	StateFile                 string                 `json:"state_file"`
+	HeartbeatInterval         string                 `json:"heartbeat_interval"`
+	ReconnectMin              string                 `json:"reconnect_min"`
+	ReconnectMax              string                 `json:"reconnect_max"`
+	DialTimeout               string                 `json:"dial_timeout"`
+	HandshakeTimeout          string                 `json:"handshake_timeout"`
+	WriteTimeout              string                 `json:"write_timeout"`
+	CommandTimeout            string                 `json:"command_timeout"`
+	MaxCommandOutputBytes     int                    `json:"max_command_output_bytes"`
+	Shell                     string                 `json:"shell"`
+	ExecEnabled               bool                   `json:"exec_enabled"`
+	TerminalEnabled           bool                   `json:"terminal_enabled"`
+	FileBrowserEnabled        bool                   `json:"file_browser_enabled"`
+	FileBrowserRoot           string                 `json:"file_browser_root"`
+	FileTransferChunkBytes    int                    `json:"file_transfer_chunk_bytes"`
+	MaxFileTransferBytes      int64                  `json:"max_file_transfer_bytes"`
+	DiskExcludeDevicePrefixes []string               `json:"disk_exclude_device_prefixes"`
+	CloudflareAccess          cloudflareAccessConfig `json:"cloudflare_access"`
+	TLS                       tlsConfig              `json:"tls"`
 
 	heartbeatDuration   time.Duration
 	reconnectMinDur     time.Duration
@@ -52,22 +53,23 @@ type tlsConfig struct {
 
 func loadAgentConfig(path string) (agentConfig, error) {
 	cfg := agentConfig{
-		StateFile:              "state.json",
-		HeartbeatInterval:      "10s",
-		ReconnectMin:           "1s",
-		ReconnectMax:           "30s",
-		DialTimeout:            "15s",
-		HandshakeTimeout:       "15s",
-		WriteTimeout:           "10s",
-		CommandTimeout:         "30s",
-		MaxCommandOutputBytes:  512 << 10,
-		Shell:                  "/bin/bash",
-		ExecEnabled:            true,
-		TerminalEnabled:        true,
-		FileBrowserEnabled:     false,
-		FileBrowserRoot:        "/",
-		FileTransferChunkBytes: 64 << 10,
-		MaxFileTransferBytes:   1 << 30,
+		StateFile:                 "state.json",
+		HeartbeatInterval:         "10s",
+		ReconnectMin:              "1s",
+		ReconnectMax:              "30s",
+		DialTimeout:               "15s",
+		HandshakeTimeout:          "15s",
+		WriteTimeout:              "10s",
+		CommandTimeout:            "30s",
+		MaxCommandOutputBytes:     512 << 10,
+		Shell:                     "/bin/bash",
+		ExecEnabled:               true,
+		TerminalEnabled:           true,
+		FileBrowserEnabled:        false,
+		FileBrowserRoot:           "/",
+		FileTransferChunkBytes:    64 << 10,
+		MaxFileTransferBytes:      1 << 30,
+		DiskExcludeDevicePrefixes: []string{"/dev/loop", "/dev/zram", "/dev/ram"},
 	}
 	f, err := os.Open(path)
 	if err != nil {
@@ -86,6 +88,9 @@ func loadAgentConfig(path string) (agentConfig, error) {
 	cfg.StateFile = strings.TrimSpace(cfg.StateFile)
 	cfg.Shell = strings.TrimSpace(cfg.Shell)
 	cfg.FileBrowserRoot = strings.TrimSpace(cfg.FileBrowserRoot)
+	for i := range cfg.DiskExcludeDevicePrefixes {
+		cfg.DiskExcludeDevicePrefixes[i] = strings.TrimSpace(cfg.DiskExcludeDevicePrefixes[i])
+	}
 	if cfg.Server == "" {
 		return cfg, fmt.Errorf("server is required")
 	}

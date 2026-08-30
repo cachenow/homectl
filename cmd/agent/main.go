@@ -358,16 +358,175 @@ func (a *agent) closeTerms() {
 
 func (a *agent) collectInfo() protocol.SystemInfo {
 	host, _ := os.Hostname()
-	var st syscall.Statfs_t
-	_ = syscall.Statfs("/", &st)
+	diskTotal, diskFree := a.diskUsage()
+	diskPhysicalTotal, diskPhysicalCount := physicalDiskCapacity()
 	memTotal, memAvail := memInfo()
 	return protocol.SystemInfo{
 		Hostname: host, OS: osRelease(), Kernel: unameR(), Arch: runtime.GOARCH,
 		CPUModel: cpuModel(), CPUCores: runtime.NumCPU(), CPUUsage: a.cpuUsage(), Load1: firstField(readFile("/proc/loadavg")),
 		MemTotal: memTotal, MemAvail: memAvail,
-		DiskTotal: st.Blocks * uint64(st.Bsize), DiskFree: st.Bavail * uint64(st.Bsize),
+		DiskTotal: diskTotal, DiskFree: diskFree,
+		DiskPhysicalTotal: diskPhysicalTotal, DiskPhysicalCount: diskPhysicalCount,
 		UptimeSec: uptime(), IPAddrs: ipAddrs(), AgentVer: version, ReportedAt: time.Now().Unix(),
 	}
+}
+
+func (a *agent) diskUsage() (uint64, uint64) {
+	return mountedFilesystemUsage("/proc/self/mountinfo", "/sys/dev/block", a.cfg.DiskExcludeDevicePrefixes)
+}
+
+// mountedFilesystemUsage sums mounted local block-backed filesystems. It uses
+// mountinfo's major:minor device ID and /sys/dev/block instead of trusting the
+// mount source path, so /dev/root, LVM, RAID and other aliases still work.
+// Multiple mounts of the same filesystem are counted once.
+func mountedFilesystemUsage(mountInfoPath, sysDevBlockRoot string, excludedPrefixes []string) (uint64, uint64) {
+	f, err := os.Open(mountInfoPath)
+	if err != nil {
+		return rootDiskUsage()
+	}
+	defer f.Close()
+
+	seenDevices := make(map[string]struct{})
+	var total, available uint64
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 10 {
+			continue
+		}
+
+		separator := -1
+		for i := 6; i < len(fields); i++ {
+			if fields[i] == "-" {
+				separator = i
+				break
+			}
+		}
+		if separator < 0 || separator+2 >= len(fields) {
+			continue
+		}
+
+		deviceID := fields[2]
+		mountPoint := unescapeMountField(fields[4])
+		source := unescapeMountField(fields[separator+2])
+
+		blockPath, err := filepath.EvalSymlinks(filepath.Join(sysDevBlockRoot, deviceID))
+		if err != nil {
+			// No sysfs block-device entry means this is normally tmpfs, proc,
+			// NFS/CIFS or another non-block-backed filesystem.
+			continue
+		}
+		blockName := filepath.Base(blockPath)
+		if excludedDiskDevice(source, blockName, excludedPrefixes) {
+			continue
+		}
+		if _, ok := seenDevices[deviceID]; ok {
+			continue
+		}
+
+		var st syscall.Statfs_t
+		if err := syscall.Statfs(mountPoint, &st); err != nil || st.Bsize <= 0 {
+			continue
+		}
+		blockSize := uint64(st.Bsize)
+		total += st.Blocks * blockSize
+		available += st.Bavail * blockSize
+		seenDevices[deviceID] = struct{}{}
+	}
+
+	if total == 0 {
+		return rootDiskUsage()
+	}
+	return total, available
+}
+
+// physicalDiskCapacity returns the capacity of whole underlying block devices,
+// independent of partitions and mount layout. Linux exposes block-device size
+// in 512-byte sectors via sysfs. Devices are grouped by their canonical
+// /device path and the largest block node in each group is counted, which avoids
+// double-counting partitions and special sibling nodes such as eMMC boot areas.
+func physicalDiskCapacity() (uint64, int) {
+	return physicalDiskCapacityAt("/sys/class/block")
+}
+
+func physicalDiskCapacityAt(sysClassBlockRoot string) (uint64, int) {
+	entries, err := os.ReadDir(sysClassBlockRoot)
+	if err != nil {
+		return 0, 0
+	}
+
+	capacityByDevice := make(map[string]uint64)
+	for _, entry := range entries {
+		name := entry.Name()
+		blockPath := filepath.Join(sysClassBlockRoot, name)
+
+		// A partition has its own /partition marker and must never be added to
+		// the whole-device total.
+		if _, err := os.Stat(filepath.Join(blockPath, "partition")); err == nil {
+			continue
+		}
+
+		// loop, ram, zram, device-mapper and md devices do not normally have a
+		// physical /device target. Requiring it naturally keeps logical layers
+		// out of the physical-capacity total while retaining SATA/SCSI, NVMe,
+		// virtio, MMC/eMMC, USB storage and persistent-memory devices.
+		devicePath, err := filepath.EvalSymlinks(filepath.Join(blockPath, "device"))
+		if err != nil {
+			continue
+		}
+
+		sectorsText := strings.TrimSpace(readFile(filepath.Join(blockPath, "size")))
+		sectors, err := strconv.ParseUint(sectorsText, 10, 64)
+		if err != nil || sectors == 0 || sectors > ^uint64(0)/512 {
+			continue
+		}
+		bytes := sectors * 512
+		if bytes > capacityByDevice[devicePath] {
+			capacityByDevice[devicePath] = bytes
+		}
+	}
+
+	var total uint64
+	for _, bytes := range capacityByDevice {
+		total += bytes
+	}
+	return total, len(capacityByDevice)
+}
+
+func rootDiskUsage() (uint64, uint64) {
+	var st syscall.Statfs_t
+	if err := syscall.Statfs("/", &st); err != nil || st.Bsize <= 0 {
+		return 0, 0
+	}
+	blockSize := uint64(st.Bsize)
+	return st.Blocks * blockSize, st.Bavail * blockSize
+}
+
+func excludedDiskDevice(source, blockName string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		prefix = strings.TrimSpace(prefix)
+		if prefix == "" {
+			continue
+		}
+		if strings.HasPrefix(source, prefix) {
+			return true
+		}
+		namePrefix := strings.TrimPrefix(prefix, "/dev/")
+		if namePrefix != "" && strings.HasPrefix(blockName, namePrefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func unescapeMountField(s string) string {
+	replacer := strings.NewReplacer(
+		`\040`, " ",
+		`\011`, "\t",
+		`\012`, "\n",
+		`\134`, `\`,
+	)
+	return replacer.Replace(s)
 }
 
 func (a *agent) cpuUsage() float64 {
