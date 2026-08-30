@@ -1,0 +1,12 @@
+/bin/
+/dist/
+/data/
+*.db
+*.db-wal
+*.db-shm
+*.db.lock
+state.json
+/deploy/server/config.json
+.DS_Store
+.idea/
+.vscode/
