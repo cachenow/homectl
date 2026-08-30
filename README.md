@@ -1,5 +1,7 @@
 # HomeCTL
 
+<img width="1311" height="655" alt="screenshot" src="https://github.com/user-attachments/assets/b6ce86b9-a7f1-41b0-8c2f-3c7958e550b2" />
+
 HomeCTL 是一个面向家庭/小型私有网络的轻量 Linux 远程管理面板：**Go Server + Linux Agent + Cloudflare Tunnel**。
 
 Agent 只主动建立到服务端的 WSS 长连接，不要求家庭宽带有公网 IP，也不需要在受控 Linux 主机开放入站端口。
