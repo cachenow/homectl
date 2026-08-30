@@ -46,6 +46,11 @@ type agent struct {
 	fileMu    sync.Mutex
 	uploads   map[string]*uploadSession
 	downloads map[string]context.CancelFunc
+
+	cpuMu        sync.Mutex
+	prevCPUTotal uint64
+	prevCPUIdle  uint64
+	cpuPrimed    bool
 }
 
 func main() {
@@ -213,7 +218,7 @@ func (a *agent) heartbeatLoop(c *websocket.Conn) {
 	t := time.NewTicker(a.cfg.heartbeatDuration)
 	defer t.Stop()
 	for {
-		info := collectInfo()
+		info := a.collectInfo()
 		a.stateMu.Lock()
 		deviceID := a.state.DeviceID
 		a.stateMu.Unlock()
@@ -351,18 +356,83 @@ func (a *agent) closeTerms() {
 	}
 }
 
-func collectInfo() protocol.SystemInfo {
+func (a *agent) collectInfo() protocol.SystemInfo {
 	host, _ := os.Hostname()
 	var st syscall.Statfs_t
 	_ = syscall.Statfs("/", &st)
 	memTotal, memAvail := memInfo()
 	return protocol.SystemInfo{
 		Hostname: host, OS: osRelease(), Kernel: unameR(), Arch: runtime.GOARCH,
-		CPUModel: cpuModel(), Load1: firstField(readFile("/proc/loadavg")),
+		CPUModel: cpuModel(), CPUCores: runtime.NumCPU(), CPUUsage: a.cpuUsage(), Load1: firstField(readFile("/proc/loadavg")),
 		MemTotal: memTotal, MemAvail: memAvail,
 		DiskTotal: st.Blocks * uint64(st.Bsize), DiskFree: st.Bavail * uint64(st.Bsize),
 		UptimeSec: uptime(), IPAddrs: ipAddrs(), AgentVer: version, ReportedAt: time.Now().Unix(),
 	}
+}
+
+func (a *agent) cpuUsage() float64 {
+	total, idle, ok := cpuTimes()
+	if !ok {
+		return -1
+	}
+	a.cpuMu.Lock()
+	defer a.cpuMu.Unlock()
+	if !a.cpuPrimed {
+		a.prevCPUTotal, a.prevCPUIdle, a.cpuPrimed = total, idle, true
+		return -1
+	}
+	dTotal := total - a.prevCPUTotal
+	dIdle := idle - a.prevCPUIdle
+	a.prevCPUTotal, a.prevCPUIdle = total, idle
+	if dTotal == 0 || dIdle > dTotal {
+		return -1
+	}
+	usage := float64(dTotal-dIdle) * 100 / float64(dTotal)
+	if usage < 0 {
+		return 0
+	}
+	if usage > 100 {
+		return 100
+	}
+	return usage
+}
+
+func cpuTimes() (total, idle uint64, ok bool) {
+	f, err := os.Open("/proc/stat")
+	if err != nil {
+		return 0, 0, false
+	}
+	defer f.Close()
+	sc := bufio.NewScanner(f)
+	if !sc.Scan() {
+		return 0, 0, false
+	}
+	fields := strings.Fields(sc.Text())
+	if len(fields) < 5 || fields[0] != "cpu" {
+		return 0, 0, false
+	}
+	values := make([]uint64, 0, 8)
+	for _, raw := range fields[1:] {
+		v, err := strconv.ParseUint(raw, 10, 64)
+		if err != nil {
+			return 0, 0, false
+		}
+		values = append(values, v)
+		if len(values) == 8 {
+			break
+		}
+	}
+	if len(values) < 4 {
+		return 0, 0, false
+	}
+	for _, v := range values {
+		total += v
+	}
+	idle = values[3]
+	if len(values) > 4 {
+		idle += values[4]
+	}
+	return total, idle, true
 }
 
 func memInfo() (total, avail uint64) {
