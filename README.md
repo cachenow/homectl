@@ -114,8 +114,8 @@ server/
 首次启动后，管理员账号会写入 SQLite，密码以 bcrypt 哈希保存。之后可以在 Web → **账户** 中：
 
 - 修改用户名
-- 修改密码（修改后会使现有 Web Session 失效并要求重新登录）
-- 开启 / 关闭 TOTP 两步验证
+- 修改密码（修改后会使现有 Web Session 失效、关闭已打开的控制台弹窗并要求重新登录）
+- 开启 / 关闭 TOTP 两步验证；验证当前密码失败时只在账户窗口提示，不会被误判为 Session 失效
 
 SQLite 已存在管理员后，Server 不再用配置文件中的 `admin_password` 覆盖数据库密码，因此可以把配置文件中的 `admin_password` 改成空字符串：
 
