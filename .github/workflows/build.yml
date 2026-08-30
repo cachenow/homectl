@@ -34,7 +34,7 @@ jobs:
           go vet ./...
 
       - name: Build binary bundles
-        run: ./scripts/build-release.sh "${{ steps.vars.outputs.version }}"
+        run: bash ./scripts/build-release.sh "${{ steps.vars.outputs.version }}"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
