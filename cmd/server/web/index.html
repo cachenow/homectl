@@ -11,13 +11,13 @@
     button,input{background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:8px;padding:9px 12px;font:inherit}button{cursor:pointer}button:hover{background:#21262d}button:disabled{cursor:not-allowed;opacity:.45}button.primary{border-color:#238636;background:#238636}button.danger{border-color:#da3633}.small{padding:6px 9px;font-size:13px}.muted{color:#8b949e}.online{color:#3fb950}.offline{color:#f85149}.warn{color:#d29922}
     .login{max-width:440px;margin:12vh auto}.login-card,.card,.modal-box{background:#161b22;border:1px solid #30363d;border-radius:12px}.login-card{padding:24px}.stack{display:grid;gap:10px}.card{margin:14px 0;padding:18px}.card h3{margin:0}.device-card{overflow:hidden}.device-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.device-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.device-id{font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;color:#6e7681;margin-top:4px}.status-pill{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#0d1117;border:1px solid #30363d;font-size:13px;font-weight:600;white-space:nowrap}
     .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}.metric{background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:12px}.metric-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.metric-label{color:#8b949e;font-size:13px}.metric-value{font-size:18px;font-weight:650}.metric-sub{color:#8b949e;font-size:12px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.progress{height:7px;background:#21262d;border-radius:999px;overflow:hidden;margin-top:9px}.progress>i{display:block;height:100%;width:var(--pct,0%);border-radius:999px;transition:width .35s ease}.metric.cpu .progress>i{background:#58a6ff}.metric.mem .progress>i{background:#3fb950}.metric.disk .progress>i{background:#a371f7}
-    .details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#30363d;border:1px solid #30363d;border-radius:10px;overflow:hidden}.detail{background:#161b22;padding:10px 12px;min-width:0}.detail-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6e7681;margin-bottom:4px}.detail-value{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.detail.wide{grid-column:span 2}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #21262d}
+    .details{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:#30363d;border:1px solid #30363d;border-radius:10px;overflow:hidden}.detail{background:#161b22;padding:10px 12px;min-width:0}.detail-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6e7681;margin-bottom:4px}.detail-value{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.detail.half{grid-column:span 3}.detail.third{grid-column:span 2}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #21262d}
     .result{position:relative;margin-top:12px;border:1px solid #30363d;background:#0d1117;border-radius:9px;padding:11px 38px 11px 11px;max-height:290px;overflow:auto}.result.error{border-color:#da3633}.result pre{white-space:pre-wrap;word-break:break-word;margin:0;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.result-close{position:absolute;right:7px;top:6px;border:0;background:transparent;padding:4px 7px;color:#8b949e}
     .modal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:18px;z-index:20}.modal-box{width:min(720px,96vw);max-height:90vh;overflow:auto;padding:18px}.modal-wide{width:min(1100px,97vw)}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.modal-head h2{margin:0}.section{padding:12px 0;border-top:1px solid #30363d}.section:first-of-type{border-top:0}.section h3{margin:0 0 10px}.field{display:grid;gap:5px;margin:8px 0}.field label{font-size:13px;color:#8b949e}.field input{width:100%}.code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px;word-break:break-all}.notice{padding:9px 11px;background:#0d1117;border:1px solid #30363d;border-radius:8px;margin:8px 0}
-    #termModal{padding:12px}.term-box{width:calc(100vw - 24px);height:calc(100vh - 24px);background:#0d1117;border:1px solid #30363d;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 60px #0008}.term-box.maximized{position:fixed;inset:0;width:100vw;height:100vh;border:0;border-radius:0}.term-head{height:48px;flex:0 0 48px;padding:7px 10px 7px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #21262d;background:#161b22}.term-head-actions{display:flex;gap:7px}.terminal{flex:1;min-width:0;min-height:0;padding:8px 10px;background:#0d1117;overflow:hidden}.terminal .xterm{height:100%}.terminal .xterm-viewport{overflow-y:auto!important}
+    #termModal{padding:12px}.term-box{position:absolute;width:min(1000px,calc(100vw - 48px));height:min(680px,calc(100vh - 72px));min-width:620px;min-height:360px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);resize:both;background:#0d1117;border:1px solid #30363d;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 60px #0008}.term-box.maximized{position:fixed;inset:0!important;width:100vw!important;height:100vh!important;min-width:0;min-height:0;max-width:none;max-height:none;resize:none;border:0;border-radius:0}.term-head{height:48px;flex:0 0 48px;padding:7px 10px 7px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #21262d;background:#161b22;cursor:move;user-select:none;touch-action:none}.term-head strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.term-head-actions{display:flex;gap:7px;flex:0 0 auto}.term-head-actions button{cursor:pointer}.terminal{flex:1;min-width:0;min-height:0;padding:8px 10px;background:#0d1117;overflow:hidden}.terminal .xterm{height:100%}.terminal .xterm-viewport{overflow-y:auto!important}
     .file-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.file-toolbar input[type=text]{min-width:260px;flex:1}.file-table{width:100%;border-collapse:collapse}.file-table th,.file-table td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}.file-name{cursor:pointer}.file-name:hover{text-decoration:underline}.file-actions{white-space:nowrap}.file-actions button{margin-right:4px}.badge{display:inline-block;padding:2px 7px;border:1px solid #30363d;border-radius:99px;font-size:12px;color:#8b949e}
-    @media(max-width:900px){.metrics{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,minmax(0,1fr))}.detail.wide{grid-column:span 2}}
-    @media(max-width:700px){.wrap{padding:14px}.bar{align-items:flex-start}.bar .row{justify-content:flex-end}.device-head{gap:10px}.details{grid-template-columns:1fr 1fr}.file-table .optional{display:none}#termModal{padding:0}.term-box{width:100vw;height:100vh;border-radius:0;border:0}}
+    @media(max-width:900px){.metrics{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,minmax(0,1fr))}.detail.half,.detail.third{grid-column:auto}}
+    @media(max-width:700px){.wrap{padding:14px}.bar{align-items:flex-start}.bar .row{justify-content:flex-end}.device-head{gap:10px}.details{grid-template-columns:1fr 1fr}.file-table .optional{display:none}#termModal{padding:0}.term-box{position:fixed;inset:0!important;width:100vw!important;height:100vh!important;min-width:0;min-height:0;max-width:none;max-height:none;resize:none;border-radius:0;border:0}.term-head{cursor:default}}
   </style>
 </head>
 <body>
@@ -81,7 +81,7 @@ window.FitAddonCtor = FitAddon;
 </script>
 <script>
 const $=s=>document.querySelector(s);
-let term=null, termWS=null, termFit=null, termResizeObserver=null, devices=[], settings={web_refresh_ms:5000,ui_result_ttl_ms:20000}, refreshTimer=null;
+let term=null, termWS=null, termFit=null, termResizeObserver=null, termDrag=null, termRestoreRect=null, devices=[], settings={web_refresh_ms:5000,ui_result_ttl_ms:20000}, refreshTimer=null;
 let account=null, pendingTOTPSecret='', fileDeviceID='', currentFilePath='/';
 const deviceResults={}; const resultTimers={};
 function escapeHTML(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -92,7 +92,7 @@ function fmtDate(ts){return ts?new Date(ts*1000).toLocaleString():'-'}
 function clampPct(n){n=Number(n);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0}
 function pctText(n){return Number.isFinite(Number(n))&&Number(n)>=0?`${Number(n).toFixed(1)}%`:'采集中'}
 function progressHTML(cls,label,pct,sub){const p=clampPct(pct);return `<div class="metric ${cls}"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-value">${pctText(pct)}</span></div><div class="progress"><i style="--pct:${p}%"></i></div><div class="metric-sub">${escapeHTML(sub)}</div></div>`}
-function detailHTML(label,value,wide=false){return `<div class="detail${wide?' wide':''}"><div class="detail-label">${label}</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div></div>`}
+function detailHTML(label,value,size='half'){return `<div class="detail ${size}"><div class="detail-label">${label}</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div></div>`}
 function closeModal(id){$('#'+id).classList.add('hidden')}
 async function api(url,opt={}){opt.headers={...(opt.headers||{}),'Content-Type':'application/json'};const r=await fetch(url,opt);const text=await r.text();if(r.status===401&&url!='/api/login'){showLogin();throw new Error('unauthorized')}if(!r.ok){let msg=text||r.statusText;try{const j=JSON.parse(text);msg=j.error||msg}catch{}throw new Error(msg.trim())}try{return JSON.parse(text)}catch{return text}}
 function showLogin(){clearInterval(refreshTimer);refreshTimer=null;$('#login').classList.remove('hidden');$('#app').classList.add('hidden')}
@@ -118,9 +118,10 @@ function renderDevices(){
     const cpuSub=`${i.cpu_cores||'?'} 核 · Load ${i.load1||'-'}`;
     const metrics=progressHTML('cpu','CPU',cpuPct,cpuSub)+progressHTML('mem','内存',memPct,`${humanBytes(memUsed)} / ${humanBytes(i.mem_total)}`)+progressHTML('disk','磁盘',diskPct,`${humanBytes(diskUsed)} / ${humanBytes(i.disk_total)}`);
     const details=[
-      detailHTML('系统',i.os||'-',true),detailHTML('主机名',i.hostname||'-'),detailHTML('架构',i.arch||'-'),detailHTML('运行时间',humanUptime(i.uptime_sec)),
-      detailHTML('CPU 型号',i.cpu_model||'-',true),detailHTML('Kernel',i.kernel||'-',true),
-      detailHTML('IP',(i.ip_addrs||[]).join(', ')||'-',true),detailHTML('Agent',i.agent_version||'-'),detailHTML('最后心跳',humanAgo(d.last_seen))
+      detailHTML('主机名',i.hostname||'-'),detailHTML('系统',i.os||'-'),
+      detailHTML('架构',i.arch||'-'),detailHTML('Kernel',i.kernel||'-'),
+      detailHTML('CPU 型号',i.cpu_model||'-'),detailHTML('CPU 核心',`${i.cpu_cores||'?'} 核`),
+      detailHTML('IP',(i.ip_addrs||[]).join(', ')||'-','third'),detailHTML('Agent',i.agent_version||'-','third'),detailHTML('最后心跳',humanAgo(d.last_seen),'third')
     ].join('');
     const actions=`<div class="actions">${settings.allow_exec?`<button ${d.online?'':'disabled'} onclick="runCmd(${idx})">执行命令</button>`:''}${settings.allow_terminal?`<button ${d.online?'':'disabled'} onclick="openTerminal(${idx})">终端</button>`:''}${settings.file_browser_enabled?`<button ${d.online?'':'disabled'} onclick="openFiles(${idx})">文件</button>`:''}<button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'reboot')">重启</button><button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'poweroff')">关机</button></div>`;
     return `<div class="card device-card"><div class="device-head"><div><div class="device-title"><h3>${escapeHTML(d.name||d.id)}</h3>${status}</div><div class="device-id">${escapeHTML(d.id)}</div></div></div><div class="metrics">${metrics}</div><div class="details">${details}</div>${actions}${resultHTML(d,idx)}</div>`;
@@ -135,13 +136,66 @@ function fitTerminal(){
     termWS.send(JSON.stringify({type:'resize',cols:term.cols,rows:term.rows}));
   }
 }
+function terminalIsMobile(){return window.matchMedia('(max-width:700px)').matches}
+function clampTerminalPosition(left,top,width,height){
+  const margin=8;
+  return {
+    left:Math.max(margin,Math.min(left,Math.max(margin,window.innerWidth-width-margin))),
+    top:Math.max(margin,Math.min(top,Math.max(margin,window.innerHeight-height-margin)))
+  };
+}
+function centerTerminalWindow(){
+  const box=$('#termBox');
+  if(!box||terminalIsMobile())return;
+  box.style.width='';box.style.height='';
+  const r=box.getBoundingClientRect();
+  const p=clampTerminalPosition((window.innerWidth-r.width)/2,(window.innerHeight-r.height)/2,r.width,r.height);
+  box.style.left=`${p.left}px`;box.style.top=`${p.top}px`;
+}
+function keepTerminalInViewport(){
+  const box=$('#termBox');
+  if(!box||box.classList.contains('maximized')||terminalIsMobile())return;
+  const r=box.getBoundingClientRect();
+  const p=clampTerminalPosition(r.left,r.top,r.width,r.height);
+  box.style.left=`${p.left}px`;box.style.top=`${p.top}px`;
+}
+function onTerminalViewportResize(){keepTerminalInViewport();fitTerminal()}
+function startTerminalDrag(e){
+  const box=$('#termBox');
+  if(!box||box.classList.contains('maximized')||terminalIsMobile()||e.button!==0||e.target.closest('.term-head-actions'))return;
+  const r=box.getBoundingClientRect();
+  termDrag={pointerId:e.pointerId,dx:e.clientX-r.left,dy:e.clientY-r.top};
+  e.currentTarget.setPointerCapture?.(e.pointerId);
+  e.preventDefault();
+}
+function moveTerminalDrag(e){
+  if(!termDrag||e.pointerId!==termDrag.pointerId)return;
+  const box=$('#termBox');if(!box)return;
+  const r=box.getBoundingClientRect();
+  const p=clampTerminalPosition(e.clientX-termDrag.dx,e.clientY-termDrag.dy,r.width,r.height);
+  box.style.left=`${p.left}px`;box.style.top=`${p.top}px`;
+}
+function stopTerminalDrag(e){
+  if(!termDrag||e.pointerId!==termDrag.pointerId)return;
+  termDrag=null;
+  try{e.currentTarget.releasePointerCapture?.(e.pointerId)}catch{}
+}
+const terminalHeader=document.querySelector('.term-head');
+terminalHeader?.addEventListener('pointerdown',startTerminalDrag);
+terminalHeader?.addEventListener('pointermove',moveTerminalDrag);
+terminalHeader?.addEventListener('pointerup',stopTerminalDrag);
+terminalHeader?.addEventListener('pointercancel',stopTerminalDrag);
 window.openTerminal=idx=>{
   const d=devices[idx];if(!d)return;
   if(!window.TerminalCtor||!window.FitAddonCtor){alert('终端组件仍在加载');return}
   $('#termTitle').textContent=`Terminal · ${d.name||d.id}`;
-  $('#termBox').classList.remove('maximized');
+  const box=$('#termBox');
+  box.classList.remove('maximized');
+  box.style.left='';box.style.top='';box.style.width='';box.style.height='';
+  termRestoreRect=null;
   $('#termSizeBtn').textContent='最大化';
   $('#termModal').classList.remove('hidden');
+  if(!terminalIsMobile())centerTerminalWindow();
   $('#terminal').innerHTML='';
   term=new window.TerminalCtor({cursorBlink:true,convertEol:false,fontSize:14,lineHeight:1.1,scrollback:5000,allowProposedApi:false});
   termFit=new window.FitAddonCtor();
@@ -154,18 +208,36 @@ window.openTerminal=idx=>{
   termWS.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='data')term.write(Uint8Array.from(atob(m.data),c=>c.charCodeAt(0)));else if(m.type==='exit')term.write(`\r\n[terminal closed] ${m.error||''}\r\n`)};
   termWS.onclose=()=>term&&term.write('\r\n[连接已关闭]\r\n');
   term.onData(data=>{if(termWS?.readyState===1)termWS.send(JSON.stringify({type:'input',data:btoa(unescape(encodeURIComponent(data))) }))});
-  termResizeObserver=new ResizeObserver(()=>requestAnimationFrame(fitTerminal));
+  termResizeObserver=new ResizeObserver(()=>requestAnimationFrame(()=>{keepTerminalInViewport();fitTerminal()}));
   termResizeObserver.observe($('#terminal'));
-  window.addEventListener('resize',fitTerminal);
+  window.addEventListener('resize',onTerminalViewportResize);
 };
-window.toggleTerminalMaximize=()=>{const max=$('#termBox').classList.toggle('maximized');$('#termSizeBtn').textContent=max?'还原':'最大化';requestAnimationFrame(fitTerminal)};
+window.toggleTerminalMaximize=()=>{
+  const box=$('#termBox');
+  const entering=!box.classList.contains('maximized');
+  if(entering&&!terminalIsMobile()){
+    const r=box.getBoundingClientRect();
+    termRestoreRect={left:r.left,top:r.top,width:r.width,height:r.height};
+  }
+  box.classList.toggle('maximized',entering);
+  $('#termSizeBtn').textContent=entering?'还原':'最大化';
+  if(!entering&&!terminalIsMobile()){
+    const r=termRestoreRect;
+    if(r){
+      box.style.width=`${r.width}px`;box.style.height=`${r.height}px`;
+      const p=clampTerminalPosition(r.left,r.top,r.width,r.height);
+      box.style.left=`${p.left}px`;box.style.top=`${p.top}px`;
+    }else centerTerminalWindow();
+  }
+  requestAnimationFrame(fitTerminal);
+};
 window.closeTerminal=()=>{
-  window.removeEventListener('resize',fitTerminal);
+  window.removeEventListener('resize',onTerminalViewportResize);
   try{termResizeObserver?.disconnect()}catch{}
   termResizeObserver=null;
   try{termWS?.close()}catch{}
   try{term?.dispose()}catch{}
-  termWS=null;term=null;termFit=null;
+  termWS=null;term=null;termFit=null;termDrag=null;termRestoreRect=null;
   $('#termModal').classList.add('hidden');
 };
 window.openAccount=async()=>{try{account=await api('/api/account');$('#accountUsername').value=account.username;$('#totpStatus').textContent=account.totp_enabled?'已启用。登录时需要 6 位动态验证码。':'未启用。';$('#totpSetupBtn').classList.toggle('hidden',account.totp_enabled);$('#totpDisableBtn').classList.toggle('hidden',!account.totp_enabled);$('#totpDisableCodeWrap').classList.toggle('hidden',!account.totp_enabled);$('#totpSetup').classList.add('hidden');$('#accountMsg').textContent='';$('#accountModal').classList.remove('hidden')}catch(e){alert(e.message)}}
