@@ -9,8 +9,9 @@ Agent 只主动建立到服务端的 WSS 长连接，不要求家庭宽带有公
 - 多台 Linux Agent
 - 一次性 Enrollment Token；注册完成后每台设备拥有独立 Device Token
 - Device Token 在 Server SQLite 中只保存 SHA-256 哈希
-- 主机名、OS、Kernel、架构、CPU 使用率/核心数、Load、内存、磁盘、IP、Uptime
-- Web 设备卡片使用 CPU / 内存 / 磁盘百分比和进度条展示，静态信息分区排列
+- 主机名、OS、Kernel、架构、CPU 使用率/核心数、Load、内存、本地存储、IP、Uptime
+- Web 设备卡片使用 CPU / 内存 / 存储百分比和进度条展示，静态信息分区排列
+- 存储同时显示“已挂载本地文件系统容量/使用率”和“底层物理块设备总容量”，避免把根分区容量误当成整块硬盘容量
 - 心跳超时离线判定，不依赖 TCP 半开连接自行超时
 - Web 执行命令，显示 stdout/stderr、退出码、耗时
 - 命令/操作结果面板可手动关闭，也可配置自动消失时间
@@ -266,6 +267,7 @@ Server 只在生成时把原始 Token 返回给浏览器；SQLite 中保存 Toke
   "file_browser_root": "/",
   "file_transfer_chunk_bytes": 65536,
   "max_file_transfer_bytes": 1073741824,
+  "disk_exclude_device_prefixes": ["/dev/loop", "/dev/zram", "/dev/ram"],
   "cloudflare_access": {
     "client_id": "",
     "client_secret": ""
@@ -275,6 +277,23 @@ Server 只在生成时把原始 Token 返回给浏览器；SQLite 中保存 Toke
   }
 }
 ```
+
+### 存储统计
+
+Agent 会把两个不同概念分别上报，Web 不再把它们混成一个数字：
+
+- **物理容量**：读取 `/sys/class/block/*/size`，只统计 whole block device；分区不重复统计，并按底层 `/device` 路径去重。Linux 的该 `size` 值以 512-byte sector 表示，因此与磁盘如何分区、挂载无关。
+- **文件系统容量/使用率**：读取 `/proc/self/mountinfo`，通过 `major:minor` 到 `/sys/dev/block/` 确认是本地块设备，再对挂载点执行 `statfs()`；同一个文件系统重复挂载只统计一次。
+
+默认排除 loop / zram / ram 这类不应计入普通存储使用率的设备：
+
+```json
+"disk_exclude_device_prefixes": ["/dev/loop", "/dev/zram", "/dev/ram"]
+```
+
+因此像 TF/eMMC、SATA/SCSI、NVMe、virtio、USB 存储等，即使根分区只占整盘的一小部分，Web 仍能显示整块物理设备容量；LVM/RAID/thin provisioning 等场景下，“物理容量”和“文件系统容量”本来就可能不同，界面会分别显示。
+
+该统计只读取 `/sys`、`/proc` 和 `statfs()`，不执行 `fdisk`、`lsblk`、`smartctl` 等外部命令，也不写磁盘。
 
 首次注册成功后自动生成：
 
