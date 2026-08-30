@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -446,7 +447,9 @@ func (s *Server) handleTerminalWS(w http.ResponseWriter, r *http.Request) {
 		_ = s.sendAgent(agent, protocol.Message{Type: "term_close", SessionID: sid})
 	}()
 
-	if err := s.sendAgent(agent, protocol.Message{Type: "term_open", SessionID: sid, Cols: 100, Rows: 30}); err != nil {
+	cols := parseTerminalDimension(r.URL.Query().Get("cols"), 100)
+	rows := parseTerminalDimension(r.URL.Query().Get("rows"), 30)
+	if err := s.sendAgent(agent, protocol.Message{Type: "term_open", SessionID: sid, Cols: cols, Rows: rows}); err != nil {
 		return
 	}
 	for {
@@ -466,6 +469,14 @@ func (s *Server) handleTerminalWS(w http.ResponseWriter, r *http.Request) {
 			_ = s.sendAgent(agent, protocol.Message{Type: "term_resize", SessionID: sid, Cols: in.Cols, Rows: in.Rows})
 		}
 	}
+}
+
+func parseTerminalDimension(raw string, fallback uint16) uint16 {
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 8 || n > 1000 {
+		return fallback
+	}
+	return uint16(n)
 }
 
 func secureEqualBytes(a, b []byte) bool {
