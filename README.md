@@ -1,21 +1,29 @@
 # HomeCTL
 
-HomeCTL 是一个面向家庭/小型私有网络的轻量 Linux 远程管理面板，采用 **Go Server + Linux Agent + Cloudflare Tunnel**。
+HomeCTL 是一个面向家庭/小型私有网络的轻量 Linux 远程管理面板：**Go Server + Linux Agent + Cloudflare Tunnel**。
 
-内网 Agent 只主动建立到服务端的 WSS 长连接，不要求家庭宽带具有公网 IP，也不需要在内网设备开放任何入站端口。
+Agent 只主动建立到服务端的 WSS 长连接，不要求家庭宽带有公网 IP，也不需要在受控 Linux 主机开放入站端口。
 
-## 功能
+## 主要功能
 
-- 多台 Linux 设备自动注册与长期独立 Device Token
-- 主机名、系统、内核、架构、CPU、负载、内存、磁盘、IP、运行时间等状态
-- Web 执行命令
+- 多台 Linux Agent
+- 一次性 Enrollment Token；注册完成后每台设备拥有独立 Device Token
+- Device Token 在 Server SQLite 中只保存 SHA-256 哈希
+- 主机名、OS、Kernel、架构、CPU、Load、内存、磁盘、IP、Uptime
+- 心跳超时离线判定，不依赖 TCP 半开连接自行超时
+- Web 执行命令，显示 stdout/stderr、退出码、耗时
+- 命令/操作结果面板可手动关闭，也可配置自动消失时间
 - 重启 / 关机
-- xterm.js + PTY 真 Web Terminal，可运行 `bash`、`top`、`vim`、`tmux` 等交互程序
-- Server 使用单个 `config.json` 配置
-- Agent 使用与二进制同目录的 `config.json`
-- Agent 首次启动后自动生成同目录 `state.json`
+- xterm.js + PTY Web Terminal
+- 用户名 + 密码登录；密码和用户名可在 Web 中修改
+- 可选 RFC 6238 TOTP 两步验证，可使用 Google Authenticator 等 6 位验证码应用
+- 可选文件浏览器：浏览、上传、下载、新建目录、重命名、删除文件/空目录
+- 文件浏览器默认关闭；不开启时不会增加 Agent 的持续 CPU/内存负载
+- Server 持久化只使用 SQLite
 - Docker Compose + remotely-managed Cloudflare Tunnel
-- GitHub Actions 自动测试、跨架构编译、GitHub Release、GHCR 多架构镜像
+- GitHub Actions：CI、手动 Build & Release、Dependabot
+
+---
 
 ## 架构
 
@@ -26,29 +34,37 @@ HTTPS / WSS
    |
 Cloudflare
    |
-Cloudflare Tunnel (Docker)
+cloudflared (Docker)
    |
-HomeCTL Server (Docker)
+HomeCTL Server (Docker + SQLite)
    ^
    |
 outbound WSS
    |
-Linux Agent (root)
+Linux Agent (root + systemd)
 ```
 
-Agent 与控制指令复用一条 WSS 连接，终端通过 `session_id` 多路复用，因此一台 Server 可以同时管理多台设备和多个终端会话。
+Agent 状态、命令、终端和按需文件操作都复用同一条 WSS 连接。
 
 ---
 
-# 一、服务端
+# 一、服务端部署
 
-推荐使用 GitHub Release 自动生成的：
+如果直接从源码仓库使用 Compose，先创建本地配置文件：
+
+```bash
+cp deploy/server/config.example.json deploy/server/config.json
+```
+
+`deploy/server/config.json` 已加入 `.gitignore`，适合在部署机上直接修改。
+
+推荐正式部署从 GitHub Release 下载：
 
 ```text
 homectl-server-deploy-vX.Y.Z.tar.gz
 ```
 
-解压后目录结构：
+解压后：
 
 ```text
 server/
@@ -57,33 +73,97 @@ server/
 └── data/
 ```
 
-## 1. 配置 `config.json`
+## 1. Server `config.json`
+
+默认示例：
 
 ```json
 {
   "listen_addr": ":8080",
-  "database_path": "/data/homectl.json",
+  "database_path": "/data/homectl.db",
+  "legacy_device_store": "",
+  "admin_username": "admin",
   "admin_password": "CHANGE_ME_TO_A_LONG_RANDOM_PASSWORD",
-  "enroll_token": "CHANGE_ME_TO_A_DIFFERENT_LONG_RANDOM_TOKEN",
   "cookie_secure": true,
   "session_ttl": "24h",
   "allow_exec": true,
-  "allow_terminal": true
+  "allow_terminal": true,
+  "file_browser_enabled": false,
+  "agent_offline_timeout": "25s",
+  "agent_handshake_timeout": "15s",
+  "agent_write_timeout": "10s",
+  "action_timeout": "8s",
+  "exec_response_timeout": "40s",
+  "file_transfer_timeout": "2m",
+  "enrollment_token_ttl": "30m",
+  "web_refresh_interval": "5s",
+  "ui_result_ttl": "20s",
+  "http_read_header_timeout": "10s",
+  "shutdown_timeout": "10s",
+  "file_transfer_chunk_bytes": 65536,
+  "max_file_transfer_bytes": 1073741824,
+  "max_command_length": 4096
 }
 ```
 
-建议生成两个不同的随机值：
+### 管理员账号
 
-```bash
-openssl rand -hex 32
-openssl rand -hex 32
+`admin_username` / `admin_password` 是 **SQLite 尚未初始化管理员时的 bootstrap 值**。
+
+首次启动后，管理员账号会写入 SQLite，密码以 bcrypt 哈希保存。之后可以在 Web → **账户** 中：
+
+- 修改用户名
+- 修改密码（修改后会使现有 Web Session 失效并要求重新登录）
+- 开启 / 关闭 TOTP 两步验证
+
+SQLite 已存在管理员后，Server 不再用配置文件中的 `admin_password` 覆盖数据库密码，因此可以把配置文件中的 `admin_password` 改成空字符串：
+
+```json
+"admin_password": ""
 ```
 
-一个用于 `admin_password`，另一个用于 `enroll_token`。
+### SQLite
+
+HomeCTL Server 的持久化数据库只有：
+
+```text
+/data/homectl.db
+```
+
+设备、管理员、TOTP Secret、一次性 Enrollment Token 状态都保存在 SQLite 中。
+
+### 重要时间参数
+
+推荐默认组合：
+
+```text
+Agent heartbeat          10s
+Server offline timeout   25s
+Web refresh               5s
+```
+
+所以设备突然断电、重启或网络黑洞后，通常在约 **25~30 秒**内显示离线。
+
+可调整：
+
+| 参数 | 默认 | 用途 |
+|---|---:|---|
+| `agent_offline_timeout` | `25s` | 多久收不到 Agent 消息即关闭连接并判离线 |
+| `agent_handshake_timeout` | `15s` | Agent 首次 hello 超时 |
+| `agent_write_timeout` | `10s` | Server 写入 Agent WSS 超时 |
+| `action_timeout` | `8s` | 重启/关机确认响应等待时间 |
+| `exec_response_timeout` | `40s` | Web 命令响应等待时间 |
+| `max_command_length` | `4096` | 单条 Web 命令最大字符/字节长度 |
+| `file_transfer_timeout` | `2m` | 文件传输无进展超时 |
+| `enrollment_token_ttl` | `30m` | 一次性 Agent 注册 Token 有效期 |
+| `web_refresh_interval` | `5s` | Web 设备列表刷新周期 |
+| `ui_result_ttl` | `20s` | 命令结果自动收起；`0s` 表示只手动关闭 |
+
+建议：`agent_offline_timeout` 至少大于 Agent `heartbeat_interval` 的 2 倍。
 
 ## 2. Cloudflare Tunnel
 
-在 Cloudflare Dashboard 创建 **remotely-managed Tunnel**，复制 Tunnel Token，然后直接编辑 `docker-compose.yml`：
+仓库默认 Compose：
 
 ```yaml
 cloudflared:
@@ -100,77 +180,89 @@ cloudflared:
     - PASTE_YOUR_CLOUDFLARE_TUNNEL_TOKEN_HERE
 ```
 
-把最后一行替换为真实 Tunnel Token 即可，然后：
+将最后一项替换成 Cloudflare remotely-managed Tunnel Token。
 
-> 如果 GitHub 仓库是公开的，不要把真实 Tunnel Token 提交到仓库；仓库里保留占位符，只在部署服务器上的 Compose 文件中替换。
+`network_mode: "service:homectl"` 表示 cloudflared 与 HomeCTL 容器共享网络命名空间，因此 Cloudflare Dashboard 的 Service URL 可以直接配置：
 
+```text
+http://localhost:8080
+```
+
+然后：
 
 ```bash
 docker compose up -d
 docker compose logs -f
 ```
 
-本项目让 `cloudflared` 与 HomeCTL Server 共享 network namespace，因此在 Cloudflare Dashboard 的 Public Hostname 中，Service 可以直接填写：
+> 仓库公开时不要提交真实 Cloudflare Tunnel Token；只在部署机上的 Compose 文件中替换。
+
+### 可选：cloudflared 使用 host 网络
+
+如果你更喜欢 host 网络，也可以手动改成：
+
+```yaml
+network_mode: host
+```
+
+HomeCTL 保持：
+
+```yaml
+ports:
+  - "127.0.0.1:8080:8080"
+```
+
+Cloudflare Dashboard 仍填写：
 
 ```text
 http://localhost:8080
 ```
 
-域名例如：
-
-```text
-panel.example.com
-```
-
-不需要在服务器防火墙上开放 HomeCTL 的 8080 公网端口。Compose 仅把它绑定到：
-
-```text
-127.0.0.1:8080
-```
-
-方便服务器本机调试。
+默认仓库仍保留 `service:homectl` 方式。
 
 ---
 
-# 二、内网 Linux Agent
+# 二、添加 Agent
 
-从 GitHub Release 下载对应架构：
+## 1. 在 Web 中生成一次性 Token
 
-```text
-homectl-agent-vX.Y.Z-linux-amd64.tar.gz
-homectl-agent-vX.Y.Z-linux-arm64.tar.gz
-homectl-agent-vX.Y.Z-linux-armv7.tar.gz
-```
-
-解压后：
+登录 HomeCTL 后：
 
 ```text
-homectl-agent
-config.json
-homectl-agent.service
-install.sh
-README.md
+添加设备 → 生成一次性 Agent Token
 ```
 
-## 1. 编辑 `config.json`
+Server 只在生成时把原始 Token 返回给浏览器；SQLite 中保存 Token 哈希。Token：
 
-最重要的只有：
+- 默认 30 分钟过期
+- 只能成功使用一次
+- 每台新 Agent 应生成一个新的 Token
+
+因此多台 Agent **不再共享一个全局 enrollment token**。
+
+## 2. Agent `config.json`
 
 ```json
 {
   "server": "wss://panel.example.com/agent/ws",
   "name": "",
-  "enroll_token": "和服务端相同的 enroll_token",
+  "enroll_token": "PASTE_A_ONE_TIME_TOKEN_FROM_THE_WEB_CONSOLE",
   "state_file": "state.json",
-  "heartbeat_interval": "15s",
+  "heartbeat_interval": "10s",
   "reconnect_min": "1s",
   "reconnect_max": "30s",
   "dial_timeout": "15s",
+  "handshake_timeout": "15s",
+  "write_timeout": "10s",
   "command_timeout": "30s",
   "max_command_output_bytes": 524288,
   "shell": "/bin/bash",
   "exec_enabled": true,
   "terminal_enabled": true,
+  "file_browser_enabled": false,
+  "file_browser_root": "/",
+  "file_transfer_chunk_bytes": 65536,
+  "max_file_transfer_bytes": 1073741824,
   "cloudflare_access": {
     "client_id": "",
     "client_secret": ""
@@ -181,20 +273,17 @@ README.md
 }
 ```
 
-`name` 留空时自动使用系统 hostname。
+首次注册成功后自动生成：
 
-如果 Cloudflare Access 同时保护了 Agent 路径，可以创建 Access Service Token 并填写：
-
-```json
-"cloudflare_access": {
-  "client_id": "xxxxxxxx.access",
-  "client_secret": "xxxxxxxx"
-}
+```text
+state.json
 ```
 
-## 2. 安装
+其中保存 Device ID 和该 Agent 独立的长期 Device Token。之后连接优先使用 Device Token；原来的一次性 `enroll_token` 不再参与认证，可以从 Agent 配置中清空。
 
-Agent 的标准安装目录就是：
+## 3. 安装
+
+标准目录：
 
 ```text
 /opt/homectl-agent/
@@ -203,35 +292,20 @@ Agent 的标准安装目录就是：
 └── state.json
 ```
 
-直接：
+Release 包内直接：
 
 ```bash
-chmod +x install.sh
 ./install.sh
 ```
 
-安装脚本只做三件事：复制二进制和配置到 `/opt/homectl-agent`、安装 systemd unit、启动服务；**没有环境变量文件**。
-
-查看状态：
+查看：
 
 ```bash
 systemctl status homectl-agent
 journalctl -u homectl-agent -f
 ```
 
-首次连接成功后会自动生成：
-
-```text
-/opt/homectl-agent/state.json
-```
-
-里面保存随机 Device ID 与服务器签发的独立 Device Token。后续启动优先使用 Device Token，不再使用全局 enrollment token 认证该设备。
-
-完成所有设备注册后，可以修改服务端的 `enroll_token` 并重启服务端，从而使旧 enrollment token 失效。
-
-## 3. 升级 Agent
-
-只需要替换二进制：
+升级 Agent：
 
 ```bash
 systemctl stop homectl-agent
@@ -240,152 +314,207 @@ chmod 755 /opt/homectl-agent/homectl-agent
 systemctl start homectl-agent
 ```
 
-`config.json` 和 `state.json` 不需要动。
-
 ---
 
-# 三、GitHub Actions
+# 三、文件浏览器
 
-仓库已经包含三个 Workflow。
-
-## CI
-
-```text
-.github/workflows/ci.yml
-```
-
-Push / Pull Request 时自动：
-
-- `gofmt` 检查
-- `go test ./...`
-- `go vet ./...`
-- 编译 Server / Agent
-
-## Manual Build
-
-```text
-.github/workflows/build.yml
-```
-
-GitHub -> Actions -> **Manual Build** -> **Run workflow**。
-
-它会自动：
-
-- 编译 amd64 / arm64 / armv7 Agent
-- 编译 amd64 / arm64 Server
-- 打包可下载 Artifact
-- 构建 amd64 + arm64 Server Docker 镜像
-- 推送到 GHCR：
-
-```text
-ghcr.io/<owner>/<repo>:dev-xxxxxxx
-ghcr.io/<owner>/<repo>:edge
-```
-
-因此平时修改代码后，不需要本地安装 Go 编译环境。
-
-## Release
-
-```text
-.github/workflows/release.yml
-```
-
-创建 tag 即可发布正式版本：
-
-```bash
-git tag v0.2.0
-git push origin v0.2.0
-```
-
-Actions 会自动生成 GitHub Release，并发布：
-
-```text
-homectl-agent-v0.2.0-linux-amd64.tar.gz
-homectl-agent-v0.2.0-linux-arm64.tar.gz
-homectl-agent-v0.2.0-linux-armv7.tar.gz
-homectl-server-v0.2.0-linux-amd64
-homectl-server-v0.2.0-linux-arm64
-homectl-server-deploy-v0.2.0.tar.gz
-SHA256SUMS
-```
-
-同时发布：
-
-```text
-ghcr.io/<owner>/<repo>:v0.2.0
-ghcr.io/<owner>/<repo>:latest
-```
-
-Release 里的 `homectl-server-deploy-*.tar.gz` 会自动把当前 GitHub 仓库对应的 GHCR 地址写进 `docker-compose.yml`，因此下载后无需自己改 Docker image 名称。
-
-如果 GHCR Container Package 保持为 Private，部署服务器需要先 `docker login ghcr.io`；如果把该 Package 的可见性改为 Public，则部署端无需登录即可拉取镜像。
-
----
-
-# 四、从源码直接运行
-
-服务端本地 Docker 构建：
-
-```bash
-cp deploy/server/config.example.json deploy/server/config.json
-
-# 编辑 deploy/server/config.json 和 docker-compose.yml
-# 将 docker-compose.yml 中的 PASTE_YOUR_CLOUDFLARE_TUNNEL_TOKEN_HERE 替换为真实 Tunnel Token
-docker compose up -d --build
-```
-
-本地 Go 编译：
-
-```bash
-go mod tidy
-make build
-```
-
----
-
-# 五、配置说明
+文件浏览器默认 **双端关闭**。
 
 Server：
 
-| 字段 | 说明 |
-|---|---|
-| `listen_addr` | HTTP 监听地址 |
-| `database_path` | 设备信息和 Device Token 数据文件 |
-| `admin_password` | Web 管理密码 |
-| `enroll_token` | 新 Agent 首次注册使用的全局 Token |
-| `cookie_secure` | 登录 Cookie 是否只允许 HTTPS |
-| `session_ttl` | Web 登录 Session 生命周期 |
-| `allow_exec` | 是否允许网页执行命令 |
-| `allow_terminal` | 是否允许 Web Terminal |
+```json
+"file_browser_enabled": true
+```
 
 Agent：
 
-| 字段 | 说明 |
-|---|---|
-| `server` | Server Agent WebSocket 地址 |
-| `name` | 面板显示名称；留空使用 hostname |
-| `enroll_token` | 第一次注册使用 |
-| `state_file` | Device ID / Device Token 状态文件；相对路径以 config 所在目录为基准 |
-| `heartbeat_interval` | 状态上报间隔 |
-| `reconnect_min/max` | 断线重连退避 |
-| `command_timeout` | 普通命令最大执行时间 |
-| `max_command_output_bytes` | 普通命令最大输出 |
-| `shell` | 命令和终端所使用的 Shell |
-| `exec_enabled` | Agent 本机是否允许执行命令 |
-| `terminal_enabled` | Agent 本机是否允许 Web Terminal |
-| `cloudflare_access` | 可选 Cloudflare Access Service Token |
-| `tls.insecure_skip_verify` | 是否忽略 TLS 验证，默认必须为 `false` |
+```json
+"file_browser_enabled": true,
+"file_browser_root": "/"
+```
 
-## 安全边界
+两边都开启后，设备卡片会出现 **文件** 按钮。
 
-Agent 以 root 运行，所以获得 HomeCTL Web 控制权本质上等价于获得受管设备的 root 权限。建议：
+当前支持：
 
-1. 使用 Cloudflare Access 保护 Web 控制台。
-2. `admin_password` 与 `enroll_token` 使用不同随机值。
-3. 完成设备注册后轮换 `enroll_token`。
-4. 不需要命令执行或终端时分别关闭 `allow_exec` / `allow_terminal` 和 Agent 对应选项。
-5. 保护 `config.json`、`state.json`、`homectl.json`，并限制包含真实 Tunnel Token 的 `docker-compose.yml` 访问权限。
+- 浏览目录
+- 上传
+- 下载
+- 新建目录
+- 重命名
+- 删除文件
+- 删除空目录
 
-## License
+删除目录故意采用非递归删除，避免在 root Agent 上误操作整棵目录树。
 
-MIT
+`file_browser_root` 可以限制 Web 文件浏览器看到的逻辑根目录，例如：
+
+```json
+"file_browser_root": "/srv"
+```
+
+此时 Web 中的 `/` 对应 Agent 的 `/srv`。路径解析会检查符号链接，避免借由 symlink 逃出配置根目录。
+
+文件浏览器不开启或无人使用时：
+
+- 不扫描目录
+- 不建立额外网络连接
+- 不做文件索引
+- 不增加周期性 CPU/内存任务
+
+只有实际浏览/上传/下载时才产生对应 I/O。
+
+文件传输大小可以通过两端的：
+
+```json
+"max_file_transfer_bytes": 1073741824
+```
+
+限制；`0` 表示不限制。传输采用分块方式，不需要一次性把整个文件载入 Agent 内存。
+
+---
+
+# 四、TOTP 两步验证
+
+Web → **账户 → 两步验证**。
+
+HomeCTL 使用标准 RFC 6238 TOTP：
+
+```text
+SHA-1
+6 digits
+30 seconds
+```
+
+兼容 Google Authenticator、Microsoft Authenticator、1Password 等应用。
+
+开启时页面会显示 Secret 和 `otpauth://` URI。在 Authenticator 中手动添加 Secret，然后输入当前 6 位验证码确认即可。
+
+启用后登录需要：
+
+```text
+用户名 + 密码 + 6 位 TOTP
+```
+
+TOTP 为可选功能，默认关闭。
+
+---
+
+# 五、从旧版 JSON Store 升级
+
+本版 Server 持久化已经改为 SQLite。旧版本如果存在：
+
+```text
+/data/homectl.json
+```
+
+可以临时配置：
+
+```json
+"database_path": "/data/homectl.db",
+"legacy_device_store": "/data/homectl.json"
+```
+
+Server 启动时会把旧 JSON 中的 Device ID、独立 Device Token、LastSeen、SystemInfo 导入 SQLite；已有 SQLite 记录不会被覆盖。
+
+确认旧 Agent 均能正常重新上线以后，把：
+
+```json
+"legacy_device_store": ""
+```
+
+并可删除旧 JSON 文件。
+
+这只是一次性迁移入口，运行时数据库仍然只有 SQLite。
+
+---
+
+# 六、GitHub Actions
+
+项目保留：
+
+```text
+.github/
+├── dependabot.yml
+└── workflows/
+    ├── ci.yml
+    └── build.yml
+```
+
+## CI
+
+push / pull request 时执行：
+
+```text
+go mod tidy
+gofmt check
+go test ./...
+go vet ./...
+```
+
+## Manual Build & Release
+
+GitHub：
+
+```text
+Actions → Manual Build & Release → Run workflow
+```
+
+输入：
+
+```text
+v0.4.0
+```
+
+自动完成：
+
+- linux/amd64 Agent
+- linux/arm64 Agent
+- linux/armv7 Agent
+- linux/amd64 Server
+- linux/arm64 Server
+- Server Docker amd64/arm64 镜像
+- GHCR `vX.Y.Z`
+- GHCR `latest`
+- GitHub Release
+- SHA256SUMS
+
+Workflow 通过：
+
+```yaml
+run: bash ./scripts/build-release.sh ...
+```
+
+调用脚本，因此即使通过 GitHub 网页手动上传文件、Shell 文件没有保存 executable bit，也能运行。
+
+## 为什么没有 `release.yml`
+
+当前 `build.yml` 的 Manual Build 已经负责创建 GitHub Release。再保留一个 tag-triggered `release.yml` 会形成两套几乎重复的发布链路，容易重复构建/重复上传 Release assets，所以目前故意只保留一套发布流程。
+
+如果以后改成“push `v*` tag 自动发布”，再恢复单独的 `release.yml` 即可。
+
+## Dependabot
+
+Dependabot 仍然有用，负责检查：
+
+- Go Modules
+- GitHub Actions 版本
+
+它不负责发布 Release。
+
+---
+
+# 七、建议的安全边界
+
+HomeCTL Agent 以 root 运行，并且可以执行命令、开 PTY、可选读写文件，因此 Web 控制台本身相当于主机 root 控制入口。
+
+建议：
+
+- 使用 HTTPS/WSS
+- 使用 Cloudflare Tunnel
+- 管理员使用长随机密码
+- 开启 TOTP
+- 不需要时关闭 `allow_exec` / `allow_terminal` / `file_browser_enabled`
+- File Browser 默认保持关闭
+- 每台新 Agent 使用独立的一次性 Enrollment Token
+- 不把真实 Cloudflare Tunnel Token 提交到公开仓库
