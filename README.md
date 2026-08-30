@@ -9,12 +9,13 @@ Agent 只主动建立到服务端的 WSS 长连接，不要求家庭宽带有公
 - 多台 Linux Agent
 - 一次性 Enrollment Token；注册完成后每台设备拥有独立 Device Token
 - Device Token 在 Server SQLite 中只保存 SHA-256 哈希
-- 主机名、OS、Kernel、架构、CPU、Load、内存、磁盘、IP、Uptime
+- 主机名、OS、Kernel、架构、CPU 使用率/核心数、Load、内存、磁盘、IP、Uptime
+- Web 设备卡片使用 CPU / 内存 / 磁盘百分比和进度条展示，静态信息分区排列
 - 心跳超时离线判定，不依赖 TCP 半开连接自行超时
 - Web 执行命令，显示 stdout/stderr、退出码、耗时
 - 命令/操作结果面板可手动关闭，也可配置自动消失时间
 - 重启 / 关机
-- xterm.js + PTY Web Terminal
+- xterm.js + PTY Web Terminal；默认接近全窗口显示，支持最大化并自动同步终端行列数
 - 用户名 + 密码登录；密码和用户名可在 Web 中修改
 - 可选 RFC 6238 TOTP 两步验证，可使用 Google Authenticator 等 6 位验证码应用
 - 可选文件浏览器：浏览、上传、下载、新建目录、重命名、删除文件/空目录
@@ -143,6 +144,8 @@ Web refresh               5s
 ```
 
 所以设备突然断电、重启或网络黑洞后，通常在约 **25~30 秒**内显示离线。
+
+CPU 使用率通过 Agent 每次心跳时读取一次 `/proc/stat`，用相邻两次心跳的 CPU 时间差计算，不创建额外采样线程。首次心跳会显示“采集中”，从下一次心跳开始显示百分比。
 
 可调整：
 
@@ -316,7 +319,13 @@ systemctl start homectl-agent
 
 ---
 
-# 三、文件浏览器
+# 三、Web Terminal
+
+终端使用 `@xterm/xterm 6.0.0` + `@xterm/addon-fit 0.10.0`。打开终端时会根据实际浏览器容器自动计算 cols/rows，并同步调整 Agent 侧 PTY。浏览器窗口变化、终端最大化/还原时也会自动重新适配，因此 `htop`、`vim`、`tmux` 等全屏 TUI 程序可以正常使用整个可见终端区域。
+
+终端默认接近整个浏览器可视区域；右上角提供 **最大化** / **关闭**。
+
+# 四、文件浏览器
 
 文件浏览器默认 **双端关闭**。
 
@@ -374,7 +383,7 @@ Agent：
 
 ---
 
-# 四、TOTP 两步验证
+# 五、TOTP 两步验证
 
 Web → **账户 → 两步验证**。
 
@@ -400,7 +409,7 @@ TOTP 为可选功能，默认关闭。
 
 ---
 
-# 五、从旧版 JSON Store 升级
+# 六、从旧版 JSON Store 升级
 
 本版 Server 持久化已经改为 SQLite。旧版本如果存在：
 
@@ -429,7 +438,82 @@ Server 启动时会把旧 JSON 中的 Device ID、独立 Device Token、LastSeen
 
 ---
 
-# 六、建议的安全边界
+# 七、GitHub Actions
+
+项目保留：
+
+```text
+.github/
+├── dependabot.yml
+└── workflows/
+    ├── ci.yml
+    └── build.yml
+```
+
+## CI
+
+push / pull request 时执行：
+
+```text
+go mod tidy
+gofmt check
+go test ./...
+go vet ./...
+```
+
+## Manual Build & Release
+
+GitHub：
+
+```text
+Actions → Manual Build & Release → Run workflow
+```
+
+输入：
+
+```text
+v0.5.0
+```
+
+自动完成：
+
+- linux/amd64 Agent
+- linux/arm64 Agent
+- linux/armv7 Agent
+- linux/amd64 Server
+- linux/arm64 Server
+- Server Docker amd64/arm64 镜像
+- GHCR `vX.Y.Z`
+- GHCR `latest`
+- GitHub Release
+- SHA256SUMS
+
+Workflow 通过：
+
+```yaml
+run: bash ./scripts/build-release.sh ...
+```
+
+调用脚本，因此即使通过 GitHub 网页手动上传文件、Shell 文件没有保存 executable bit，也能运行。
+
+## 为什么没有 `release.yml`
+
+当前 `build.yml` 的 Manual Build 已经负责创建 GitHub Release。再保留一个 tag-triggered `release.yml` 会形成两套几乎重复的发布链路，容易重复构建/重复上传 Release assets，所以目前故意只保留一套发布流程。
+
+如果以后改成“push `v*` tag 自动发布”，再恢复单独的 `release.yml` 即可。
+
+## Dependabot
+
+Dependabot 仍然有用，负责检查：
+
+- Go Modules
+- GitHub Actions 版本
+
+它不负责发布 Release。
+
+---
+
+# 八、建议的安全边界
 
 HomeCTL Agent 以 root 运行，并且可以执行命令、开 PTY、可选读写文件，因此 Web 控制台本身相当于主机 root 控制入口。
 
