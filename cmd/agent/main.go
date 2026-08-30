@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -41,6 +42,10 @@ type agent struct {
 	termMu  sync.Mutex
 	terms   map[string]*termSession
 	writeMu sync.Mutex
+
+	fileMu    sync.Mutex
+	uploads   map[string]*uploadSession
+	downloads map[string]context.CancelFunc
 }
 
 func main() {
@@ -72,6 +77,8 @@ func main() {
 		statePath: cfg.StateFile,
 		state:     state,
 		terms:     make(map[string]*termSession),
+		uploads:   make(map[string]*uploadSession),
+		downloads: make(map[string]context.CancelFunc),
 	}
 	log.Printf("homectl-agent %s starting as %s (%s), config=%s", version, cfg.Name, state.DeviceID, *configPath)
 
@@ -82,6 +89,7 @@ func main() {
 			log.Printf("connection ended: %v", err)
 		}
 		a.closeTerms()
+		a.closeFileTransfers()
 		if connectedFor >= time.Minute {
 			backoff = cfg.reconnectMinDur
 		}
@@ -128,7 +136,10 @@ func (a *agent) run() (time.Duration, error) {
 		return 0, err
 	}
 	var ack protocol.Message
-	if err := wsjson.Read(context.Background(), c, &ack); err != nil {
+	handshakeCtx, handshakeCancel := context.WithTimeout(context.Background(), a.cfg.handshakeTimeoutDur)
+	err = wsjson.Read(handshakeCtx, c, &ack)
+	handshakeCancel()
+	if err != nil {
 		return 0, err
 	}
 	if ack.Type != "hello_ack" {
@@ -166,6 +177,26 @@ func (a *agent) run() (time.Duration, error) {
 			a.termResize(m)
 		case "term_close":
 			a.termClose(m.SessionID)
+		case "file_list":
+			go a.handleFileList(c, m)
+		case "file_mkdir":
+			go a.handleFileMkdir(c, m)
+		case "file_delete":
+			go a.handleFileDelete(c, m)
+		case "file_rename":
+			go a.handleFileRename(c, m)
+		case "file_download":
+			go a.handleFileDownload(c, m)
+		case "file_cancel":
+			a.handleFileCancel(m)
+		case "file_upload_start":
+			a.handleFileUploadStart(c, m)
+		case "file_upload_chunk":
+			a.handleFileUploadChunk(c, m)
+		case "file_upload_end":
+			a.handleFileUploadEnd(c, m)
+		case "file_upload_abort":
+			a.handleFileUploadAbort(m)
 		}
 	}
 }
@@ -173,7 +204,7 @@ func (a *agent) run() (time.Duration, error) {
 func (a *agent) send(c *websocket.Conn, m protocol.Message) error {
 	a.writeMu.Lock()
 	defer a.writeMu.Unlock()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), a.cfg.writeTimeoutDur)
 	defer cancel()
 	return wsjson.Write(ctx, c, m)
 }
@@ -187,6 +218,7 @@ func (a *agent) heartbeatLoop(c *websocket.Conn) {
 		deviceID := a.state.DeviceID
 		a.stateMu.Unlock()
 		if err := a.send(c, protocol.Message{Type: "heartbeat", DeviceID: deviceID, Name: a.cfg.Name, Info: &info}); err != nil {
+			c.CloseNow()
 			return
 		}
 		<-t.C
@@ -224,8 +256,15 @@ func (a *agent) handleExec(c *websocket.Conn, m protocol.Message) {
 	res := protocol.Message{Type: "command_result", RequestID: m.RequestID, Data: string(out)}
 	if ctx.Err() == context.DeadlineExceeded {
 		res.Error = "command timeout"
+		res.ExitCode = -1
 	} else if err != nil {
 		res.Error = err.Error()
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			res.ExitCode = exitErr.ExitCode()
+		} else {
+			res.ExitCode = -1
+		}
 	}
 	_ = a.send(c, res)
 }

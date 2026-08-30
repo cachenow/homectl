@@ -11,7 +11,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
-	"time"
 
 	app "homectl/internal/server"
 )
@@ -42,6 +41,18 @@ func main() {
 		log.Fatal(err)
 	}
 	defer store.Close()
+	if err := store.EnsureAdmin(cfg.AdminUsername, cfg.AdminPassword); err != nil {
+		log.Fatal(err)
+	}
+	if cfg.LegacyDeviceStore != "" {
+		n, err := store.ImportLegacyDeviceJSON(cfg.LegacyDeviceStore)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if n > 0 {
+			log.Printf("migrated %d legacy device(s) from %s", n, cfg.LegacyDeviceStore)
+		}
+	}
 
 	webRoot, err := fs.Sub(embedded, "web")
 	if err != nil {
@@ -52,14 +63,14 @@ func main() {
 	httpServer := &http.Server{
 		Addr:              cfg.Addr,
 		Handler:           s.Handler(http.FS(webRoot)),
-		ReadHeaderTimeout: 10 * time.Second,
+		ReadHeaderTimeout: cfg.HTTPReadHeaderTimeout,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	go func() {
 		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 		defer cancel()
 		_ = httpServer.Shutdown(shutdownCtx)
 	}()
