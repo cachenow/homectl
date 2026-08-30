@@ -104,7 +104,7 @@ func (s *Server) handleChangeUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.verifyCurrentPassword(in.CurrentPassword) {
-		http.Error(w, "current password incorrect", http.StatusUnauthorized)
+		http.Error(w, "current password incorrect", http.StatusForbidden)
 		return
 	}
 	if err := s.store.UpdateAdminUsername(in.Username); err != nil {
@@ -128,7 +128,7 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.verifyCurrentPassword(in.CurrentPassword) {
-		http.Error(w, "current password incorrect", http.StatusUnauthorized)
+		http.Error(w, "current password incorrect", http.StatusForbidden)
 		return
 	}
 	if err := s.store.UpdateAdminPassword(in.NewPassword); err != nil {
@@ -151,7 +151,7 @@ func (s *Server) handleTOTPSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.verifyCurrentPassword(in.CurrentPassword) {
-		http.Error(w, "current password incorrect", http.StatusUnauthorized)
+		http.Error(w, "current password incorrect", http.StatusForbidden)
 		return
 	}
 	a, err := s.store.GetAdmin()
@@ -182,7 +182,7 @@ func (s *Server) handleTOTPEnable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.verifyCurrentPassword(in.CurrentPassword) {
-		http.Error(w, "current password incorrect", http.StatusUnauthorized)
+		http.Error(w, "current password incorrect", http.StatusForbidden)
 		return
 	}
 	in.Secret = strings.TrimSpace(strings.ToUpper(in.Secret))
@@ -207,7 +207,7 @@ func (s *Server) handleTOTPDisable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.verifyCurrentPassword(in.CurrentPassword) {
-		http.Error(w, "current password incorrect", http.StatusUnauthorized)
+		http.Error(w, "current password incorrect", http.StatusForbidden)
 		return
 	}
 	a, err := s.store.GetAdmin()
