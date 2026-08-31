@@ -110,6 +110,8 @@ func (s *Server) Handler(webFS http.FileSystem) http.Handler {
 	mux.Handle("POST /api/account/totp/disable", s.requireAuth(http.HandlerFunc(s.handleTOTPDisable)))
 	mux.Handle("POST /api/enrollment-tokens", s.requireAuth(http.HandlerFunc(s.handleCreateEnrollmentToken)))
 	mux.Handle("GET /api/devices", s.requireAuth(http.HandlerFunc(s.handleDevices)))
+	mux.Handle("PATCH /api/device/{id}", s.requireAuth(http.HandlerFunc(s.handleUpdateDevice)))
+	mux.Handle("DELETE /api/device/{id}", s.requireAuth(http.HandlerFunc(s.handleDeleteDevice)))
 	mux.Handle("POST /api/device/{id}/action", s.requireAuth(http.HandlerFunc(s.handleAction)))
 	mux.Handle("POST /api/device/{id}/exec", s.requireAuth(http.HandlerFunc(s.handleExec)))
 	mux.Handle("GET /api/device/{id}/files", s.requireAuth(http.HandlerFunc(s.handleFileList)))
@@ -240,16 +242,7 @@ func (s *Server) handleAgentMessage(id string, m protocol.Message) {
 
 	switch m.Type {
 	case "heartbeat":
-		rec, _ := s.store.Get(id)
-		if rec == nil {
-			return
-		}
-		rec.LastSeen = time.Now().Unix()
-		if m.Name != "" {
-			rec.Name = m.Name
-		}
-		rec.Info = m.Info
-		_ = s.store.Put(rec)
+		_ = s.store.UpdateHeartbeat(id, time.Now().Unix(), m.Info)
 	case "term_data", "term_exit":
 		s.mu.RLock()
 		term := s.terms[m.SessionID]
@@ -309,6 +302,72 @@ func (s *Server) handleDevices(w http.ResponseWriter, _ *http.Request) {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) handleUpdateDevice(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(r.PathValue("id"))
+	if id == "" {
+		http.Error(w, "invalid device", http.StatusBadRequest)
+		return
+	}
+	var in struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&in); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	in.Name = strings.TrimSpace(in.Name)
+	if in.Name == "" || len([]rune(in.Name)) > 128 {
+		http.Error(w, "invalid device name", http.StatusBadRequest)
+		return
+	}
+	rec, err := s.store.Get(id)
+	if err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+	if rec == nil {
+		http.Error(w, "device not found", http.StatusNotFound)
+		return
+	}
+	if err := s.store.UpdateDeviceName(id, in.Name); err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": id, "name": in.Name})
+}
+
+func (s *Server) handleDeleteDevice(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(r.PathValue("id"))
+	if id == "" {
+		http.Error(w, "invalid device", http.StatusBadRequest)
+		return
+	}
+	rec, err := s.store.Get(id)
+	if err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+	if rec == nil {
+		http.Error(w, "device not found", http.StatusNotFound)
+		return
+	}
+
+	if err := s.store.DeleteDevice(id); err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+	s.mu.Lock()
+	agent := s.agents[id]
+	if agent != nil {
+		delete(s.agents, id)
+	}
+	s.mu.Unlock()
+	if agent != nil {
+		_ = agent.conn.Close(websocket.StatusPolicyViolation, "device removed")
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 func (s *Server) handleAction(w http.ResponseWriter, r *http.Request) {

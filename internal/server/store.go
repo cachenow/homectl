@@ -142,6 +142,29 @@ ON CONFLICT(id) DO UPDATE SET
 	return err
 }
 
+func (s *Store) UpdateHeartbeat(id string, lastSeen int64, info *protocol.SystemInfo) error {
+	infoJSON := ""
+	if info != nil {
+		b, err := protocol.MarshalSystemInfo(info)
+		if err != nil {
+			return err
+		}
+		infoJSON = string(b)
+	}
+	_, err := s.db.Exec(`UPDATE devices SET last_seen=?, info_json=? WHERE id=?`, lastSeen, infoJSON, id)
+	return err
+}
+
+func (s *Store) UpdateDeviceName(id, name string) error {
+	_, err := s.db.Exec(`UPDATE devices SET name=? WHERE id=?`, name, id)
+	return err
+}
+
+func (s *Store) DeleteDevice(id string) error {
+	_, err := s.db.Exec(`DELETE FROM devices WHERE id=?`, id)
+	return err
+}
+
 func (s *Store) List() ([]DeviceRecord, error) {
 	rows, err := s.db.Query(`SELECT id,name,token_hash,last_seen,info_json FROM devices ORDER BY name,id`)
 	if err != nil {

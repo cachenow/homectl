@@ -25,12 +25,28 @@ func TestSQLiteStoreDevicesAndAdmin(t *testing.T) {
 	if err := s.Put(want); err != nil {
 		t.Fatal(err)
 	}
+	if err := s.UpdateDeviceName("device-1", "custom lab"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.UpdateHeartbeat("device-1", 456, nil); err != nil {
+		t.Fatal(err)
+	}
 	got, err := s.Get("device-1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got == nil || got.ID != want.ID || got.Name != want.Name || !secureEqualBytes(got.TokenHash, want.TokenHash) {
-		t.Fatalf("unexpected record: %#v", got)
+	if got == nil || got.ID != want.ID || got.Name != "custom lab" || got.LastSeen != 456 || !secureEqualBytes(got.TokenHash, want.TokenHash) {
+		t.Fatalf("unexpected record after rename/heartbeat: %#v", got)
+	}
+	if err := s.DeleteDevice("device-1"); err != nil {
+		t.Fatal(err)
+	}
+	got, err = s.Get("device-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != nil {
+		t.Fatalf("device still exists after delete: %#v", got)
 	}
 }
 
