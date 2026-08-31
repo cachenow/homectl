@@ -12,7 +12,9 @@ Agent 只主动建立到服务端的 WSS 长连接，不要求家庭宽带有公
 - 一次性 Enrollment Token；注册完成后每台设备拥有独立 Device Token
 - Device Token 在 Server SQLite 中只保存 SHA-256 哈希
 - 主机名、OS、Kernel、架构、CPU 使用率/核心数、Load、内存、本地存储、IP、Uptime
-- Web 设备卡片使用 CPU / 内存 / 存储百分比和进度条展示，静态信息分区排列
+- Web 设备卡片使用 CPU / 内存 / 存储百分比和进度条展示，静态信息分区排列；设备卡片可折叠，默认仅第一台展开
+- Web 支持暗色、亮色、跟随系统三种主题，主题偏好保存在当前浏览器
+- 独立设备管理界面：添加设备、修改自定义设备名、删除并吊销设备凭据
 - 存储同时显示“已挂载本地文件系统容量/使用率”和“底层物理块设备总容量”，避免把根分区容量误当成整块硬盘容量
 - 心跳超时离线判定，不依赖 TCP 半开连接自行超时
 - Web 执行命令，显示 stdout/stderr、退出码、耗时
@@ -136,6 +138,30 @@ HomeCTL Server 的持久化数据库只有：
 
 设备、管理员、TOTP Secret、一次性 Enrollment Token 状态都保存在 SQLite 中。
 
+### 设备管理与显示名
+
+主页右上角的 **设备管理** 集中提供：
+
+- 添加设备并生成一次性 Enrollment Token
+- 修改设备的控制台自定义显示名
+- 删除设备
+
+设备首次注册时，自定义显示名默认取 Agent 上报的名称/主机名；之后 heartbeat **不会覆盖你在 Web 中修改的显示名**。真实主机名仍会显示在设备详情的“主机名”字段中。
+
+删除设备会从 SQLite 删除记录、吊销该设备长期 Device Token，并断开当前 Agent 连接。若要重新添加被删除的 Agent，需要为它生成新的 Enrollment Token，并在 Agent 端清理旧 `state.json`（或至少清空其中的 `device_token`）后重新注册。
+
+### Web 主题和卡片折叠
+
+右上角三个图标分别对应：
+
+```text
+☾  暗色
+☀  亮色
+◐  跟随系统
+```
+
+主题选择保存在浏览器 `localStorage`，不写入 Server 配置或 SQLite。设备卡片在首次加载时仅按当前排序的第一台自动展开，其余默认收起；展开/收起状态只属于当前页面会话。
+
 ### 重要时间参数
 
 推荐默认组合：
@@ -235,7 +261,7 @@ http://localhost:8080
 登录 HomeCTL 后：
 
 ```text
-添加设备 → 生成一次性 Agent Token
+设备管理 → 添加设备 → 生成一次性 Agent Token
 ```
 
 Server 只在生成时把原始 Token 返回给浏览器；SQLite 中保存 Token 哈希。Token：
@@ -461,7 +487,7 @@ Server 启动时会把旧 JSON 中的 Device ID、独立 Device Token、LastSeen
 
 ---
 
-# 八、建议的安全边界
+# 七、建议的安全边界
 
 HomeCTL Agent 以 root 运行，并且可以执行命令、开 PTY、可选读写文件，因此 Web 控制台本身相当于主机 root 控制入口。
 
