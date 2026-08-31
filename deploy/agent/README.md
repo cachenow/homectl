@@ -9,7 +9,7 @@
 └── state.json       # 首次运行自动创建
 ```
 
-先在 HomeCTL Web → “添加设备”生成一个 **一次性 Agent Token**，填写到 `config.json` 的 `enroll_token`。
+先在 HomeCTL Web → **设备管理 → 添加设备** 生成一个 **一次性 Agent Token**，填写到 `config.json` 的 `enroll_token`。
 
 然后以 root 运行：
 
