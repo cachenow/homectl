@@ -1,44 +1,18 @@
-# HomeCTL Server deployment
+# HomeCTL Server 部署包
 
-1. 编辑 `config.json`，至少修改 `admin_username` / `admin_password`。
-2. 编辑 `docker-compose.yml`，将 `PASTE_YOUR_CLOUDFLARE_TUNNEL_TOKEN_HERE` 替换为 Cloudflare remotely-managed Tunnel Token。
+1. 编辑 `config.json`，至少替换 `admin_password`。
+2. 如果 Compose 中包含 cloudflared，把 Tunnel Token 替换成自己的值；不使用 Cloudflare 时删除 `cloudflared` service。
 3. 启动：
 
 ```bash
 docker compose up -d
-docker compose logs -f
+docker compose logs -f homectl
 ```
 
-默认 Compose 使用：
+健康检查：
 
-```yaml
-network_mode: "service:homectl"
+```bash
+curl http://127.0.0.1:8080/healthz
 ```
 
-因此 cloudflared 与 HomeCTL 共享网络命名空间，Cloudflare Dashboard 的 Service URL 直接填写：
-
-```text
-http://localhost:8080
-```
-
-如果希望 cloudflared 使用 host 网络，可以手动改成：
-
-```yaml
-network_mode: host
-```
-
-HomeCTL 已经只发布在宿主机 `127.0.0.1:8080`，此时 Cloudflare Service URL 仍然填写 `http://localhost:8080`。
-
-首次启动后管理员账号写入 SQLite `/data/homectl.db`。之后用户名、密码、TOTP 均可在 Web → 账户中修改。
-
-新 Agent 不共享全局注册 Token：登录 Web 后点击“添加设备”为每台新 Agent 单独生成一次性 Token。
-
-默认存活参数：
-
-```text
-Agent heartbeat        10s
-Server offline timeout 25s
-Web refresh             5s
-```
-
-文件浏览器默认关闭。如需启用，Server 和对应 Agent 的 `file_browser_enabled` 都要设置为 `true`。
+完整文档请查看项目仓库的 `docs/INSTALL_DOCKER.md` 和 `docs/CONFIGURATION.md`。

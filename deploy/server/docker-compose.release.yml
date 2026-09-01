@@ -2,6 +2,8 @@ services:
   homectl:
     image: __IMAGE__:__TAG__
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - ./config.json:/app/config.json:ro
       - ./data:/data
@@ -9,8 +11,10 @@ services:
       - "127.0.0.1:8080:8080"
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.8.3@sha256:51c9cefcb4569df44e1ad403ab1d3d8065aa8e84339bcfc6aee75502e1140339
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       - homectl
     network_mode: "service:homectl"
