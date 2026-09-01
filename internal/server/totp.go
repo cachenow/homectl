@@ -3,7 +3,7 @@ package server
 import (
 	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha1" // RFC 6238 default used by Google Authenticator.
+	"crypto/sha1" // RFC 6238 default; broad authenticator compatibility.
 	"encoding/base32"
 	"encoding/binary"
 	"fmt"
@@ -13,7 +13,7 @@ import (
 )
 
 func newTOTPSecret() (string, error) {
-	b := make([]byte, 20)
+	b := make([]byte, 20) // 160-bit secret, matching the RFC 4226 reference size.
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
@@ -21,19 +21,29 @@ func newTOTPSecret() (string, error) {
 }
 
 func validTOTP(secret, code string, now time.Time) bool {
+	_, ok := matchTOTP(secret, code, now)
+	return ok
+}
+
+// matchTOTP returns the accepted 30-second time step. A one-step clock skew in
+// either direction is allowed for interoperability; login replay prevention is
+// handled separately by recording the last accepted login step in SQLite.
+func matchTOTP(secret, code string, now time.Time) (int64, bool) {
 	code = strings.TrimSpace(code)
 	if len(code) != 6 {
-		return false
+		return 0, false
 	}
 	if _, err := strconv.Atoi(code); err != nil {
-		return false
+		return 0, false
 	}
-	for drift := int64(-1); drift <= 1; drift++ {
-		if totpCode(secret, now.Unix()/30+drift) == code {
-			return true
+	current := now.Unix() / 30
+	for _, drift := range []int64{0, -1, 1} {
+		step := current + drift
+		if hmac.Equal([]byte(totpCode(secret, step)), []byte(code)) {
+			return step, true
 		}
 	}
-	return false
+	return 0, false
 }
 
 func totpCode(secret string, counter int64) string {

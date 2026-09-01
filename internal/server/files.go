@@ -130,14 +130,21 @@ func (s *Server) handleFileDownload(w http.ResponseWriter, r *http.Request) {
 	}
 	requestID, p := s.newPending()
 	defer s.removePending(requestID, p)
-	if err := s.sendAgent(agent, protocol.Message{Type: "file_download", RequestID: requestID, Path: path, Size: s.cfg.MaxFileTransferBytes}); err != nil {
+	credits := 0
+	if agent.fileDownloadCredits {
+		credits = initialFileDownloadCredits
+	}
+	if err := s.sendAgent(agent, protocol.Message{Type: "file_download", RequestID: requestID, Path: path, Size: s.cfg.MaxFileTransferBytes, Credits: credits}); err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
 
 	timer := time.NewTimer(s.cfg.FileTransferTimeout)
 	defer timer.Stop()
-	headersWritten := false
+	responseCommitted := false
+	metadataReceived := false
+	expectedSize := int64(-1)
+	var total int64
 	for {
 		select {
 		case m := <-p.ch:
@@ -148,21 +155,46 @@ func (s *Server) handleFileDownload(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, m.Error, http.StatusBadGateway)
 					return
 				}
-				w.Header().Set("Content-Type", "application/octet-stream")
-				w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filepath.Base(path)}))
-				if m.Size >= 0 {
-					w.Header().Set("Content-Length", int64String(m.Size))
-				}
-				headersWritten = true
-			case "file_chunk":
-				b, err := base64.StdEncoding.DecodeString(m.Data)
-				if err != nil {
+				if metadataReceived || m.Size < 0 {
+					_ = s.sendAgent(agent, protocol.Message{Type: "file_cancel", RequestID: requestID})
+					if !responseCommitted {
+						http.Error(w, "device reported invalid file metadata", http.StatusBadGateway)
+					}
 					return
 				}
-				if !headersWritten {
-					w.Header().Set("Content-Type", "application/octet-stream")
-					headersWritten = true
+				if s.cfg.MaxFileTransferBytes > 0 && m.Size > s.cfg.MaxFileTransferBytes {
+					_ = s.sendAgent(agent, protocol.Message{Type: "file_cancel", RequestID: requestID})
+					http.Error(w, "file exceeds configured maximum", http.StatusRequestEntityTooLarge)
+					return
 				}
+				metadataReceived = true
+				expectedSize = m.Size
+				w.Header().Set("Content-Type", "application/octet-stream")
+				w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filepath.Base(path)}))
+				w.Header().Set("Content-Length", int64String(m.Size))
+			case "file_chunk":
+				if !metadataReceived {
+					_ = s.sendAgent(agent, protocol.Message{Type: "file_cancel", RequestID: requestID})
+					http.Error(w, "device sent file data before metadata", http.StatusBadGateway)
+					return
+				}
+				b, err := base64.StdEncoding.DecodeString(m.Data)
+				if err != nil {
+					_ = s.sendAgent(agent, protocol.Message{Type: "file_cancel", RequestID: requestID})
+					if !responseCommitted {
+						http.Error(w, "device sent an invalid file chunk", http.StatusBadGateway)
+					}
+					return
+				}
+				if s.cfg.MaxFileTransferBytes > 0 && int64(len(b)) > s.cfg.MaxFileTransferBytes-total {
+					_ = s.sendAgent(agent, protocol.Message{Type: "file_cancel", RequestID: requestID})
+					if !responseCommitted {
+						http.Error(w, "file exceeds configured maximum", http.StatusRequestEntityTooLarge)
+					}
+					return
+				}
+				total += int64(len(b))
+				responseCommitted = true
 				if _, err := w.Write(b); err != nil {
 					_ = s.sendAgent(agent, protocol.Message{Type: "file_cancel", RequestID: requestID})
 					return
@@ -170,15 +202,30 @@ func (s *Server) handleFileDownload(w http.ResponseWriter, r *http.Request) {
 				if f, ok := w.(http.Flusher); ok {
 					f.Flush()
 				}
+				if agent.fileDownloadCredits {
+					if err := s.sendAgent(agent, protocol.Message{Type: "file_credit", RequestID: requestID, Credits: 1}); err != nil {
+						return
+					}
+				}
 			case "file_end":
-				if m.Error != "" && !headersWritten {
+				if m.Error != "" && !responseCommitted {
 					http.Error(w, m.Error, http.StatusBadGateway)
+				}
+				if m.Error == "" && (!metadataReceived || total != expectedSize) {
+					if !responseCommitted {
+						http.Error(w, "device sent an incomplete file", http.StatusBadGateway)
+					}
 				}
 				return
 			}
+		case <-p.done:
+			if !responseCommitted {
+				http.Error(w, p.failure().Error(), http.StatusBadGateway)
+			}
+			return
 		case <-timer.C:
 			_ = s.sendAgent(agent, protocol.Message{Type: "file_cancel", RequestID: requestID})
-			if !headersWritten {
+			if !responseCommitted {
 				http.Error(w, "file transfer timeout", http.StatusGatewayTimeout)
 			}
 			return
@@ -209,10 +256,20 @@ func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	requestID, p := s.newPending()
 	defer s.removePending(requestID, p)
-	if err := s.sendAgent(agent, protocol.Message{Type: "file_upload_start", RequestID: requestID, Path: path, Size: r.ContentLength, Mode: 0644}); err != nil {
+	credits := 0
+	if agent.fileUploadCredits {
+		credits = initialFileUploadCredits
+	}
+	if err := s.sendAgent(agent, protocol.Message{Type: "file_upload_start", RequestID: requestID, Path: path, Size: r.ContentLength, Mode: 0644, Credits: credits}); err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
+	completed := false
+	defer func() {
+		if !completed {
+			_ = s.sendAgent(agent, protocol.Message{Type: "file_upload_abort", RequestID: requestID})
+		}
+	}()
 
 	wait := func(expected string) (protocol.Message, error) {
 		t := time.NewTimer(s.cfg.FileTransferTimeout)
@@ -223,6 +280,11 @@ func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
 				if m.Type == expected {
 					return m, nil
 				}
+				if m.Type == "file_upload_result" && m.Error != "" {
+					return m, errors.New(m.Error)
+				}
+			case <-p.done:
+				return protocol.Message{}, p.failure()
 			case <-t.C:
 				return protocol.Message{}, errors.New("file transfer timeout")
 			case <-r.Context().Done():
@@ -238,10 +300,31 @@ func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
+	uploadWindow := 0
+	if agent.fileUploadCredits {
+		if ready.Credits < 1 || ready.Credits > initialFileUploadCredits {
+			http.Error(w, "device returned invalid upload credits", http.StatusBadGateway)
+			return
+		}
+		credits = ready.Credits
+		uploadWindow = ready.Credits
+	}
 
 	buf := make([]byte, s.cfg.FileTransferChunkBytes)
 	var total int64
 	for {
+		if agent.fileUploadCredits && credits == 0 {
+			credit, err := wait("file_upload_credit")
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadGateway)
+				return
+			}
+			if credit.Credits < 1 || credit.Credits > uploadWindow {
+				http.Error(w, "device returned invalid upload credits", http.StatusBadGateway)
+				return
+			}
+			credits = min(uploadWindow, credits+credit.Credits)
+		}
 		n, readErr := r.Body.Read(buf)
 		if n > 0 {
 			total += int64(n)
@@ -255,6 +338,9 @@ func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadGateway)
 				return
 			}
+			if agent.fileUploadCredits {
+				credits--
+			}
 		}
 		if readErr == io.EOF {
 			break
@@ -264,6 +350,18 @@ func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, readErr.Error(), http.StatusBadRequest)
 			return
 		}
+	}
+	for agent.fileUploadCredits && credits < uploadWindow {
+		credit, err := wait("file_upload_credit")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		if credit.Credits < 1 || credit.Credits > uploadWindow {
+			http.Error(w, "device returned invalid upload credits", http.StatusBadGateway)
+			return
+		}
+		credits = min(uploadWindow, credits+credit.Credits)
 	}
 	if err := s.sendAgent(agent, protocol.Message{Type: "file_upload_end", RequestID: requestID}); err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
@@ -278,6 +376,7 @@ func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, res.Error, http.StatusBadGateway)
 		return
 	}
+	completed = true
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "bytes": total})
 }
 

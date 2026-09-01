@@ -3,6 +3,7 @@ package server
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -17,6 +18,19 @@ func TestLoadConfig(t *testing.T) {
   "admin_password": "0123456789abcdef",
   "cookie_secure": false,
   "session_ttl": "2h",
+  "remember_session_ttl": "48h",
+  "preauth_ttl": "4m",
+  "preauth_max_attempts": 4,
+  "password_max_failures": 8,
+  "password_failure_window": "12m",
+  "password_lockout_duration": "45s",
+  "password_hash_concurrency": 3,
+  "password_hash_queue_timeout": "6s",
+  "totp_max_failures": 7,
+  "totp_failure_window": "9m",
+  "totp_lockout_duration": "35s",
+  "client_ip_header": "CF-Connecting-IP",
+  "trusted_proxy_cidrs": ["127.0.0.1/32", "::1/128"],
   "allow_exec": false,
   "allow_terminal": true,
   "file_browser_enabled": true,
@@ -48,25 +62,80 @@ func TestLoadConfig(t *testing.T) {
 	if cfg.DBPath != filepath.Join(dir, "data/homectl.db") {
 		t.Fatalf("unexpected db path: %s", cfg.DBPath)
 	}
-	if cfg.AdminUsername != "owner" {
-		t.Fatalf("unexpected username: %s", cfg.AdminUsername)
+	if cfg.AdminUsername != "owner" || cfg.AdminPassword != "0123456789abcdef" {
+		t.Fatal("bootstrap credentials not loaded")
 	}
-	if cfg.CookieSecure {
-		t.Fatal("cookie_secure false was not preserved")
+	if cfg.CookieSecure || cfg.AllowExec || !cfg.FileBrowserEnabled {
+		t.Fatal("boolean settings not loaded")
 	}
-	if cfg.AllowExec {
-		t.Fatal("allow_exec false was not preserved")
+	if cfg.SessionTTL != 2*time.Hour || cfg.RememberSessionTTL != 48*time.Hour || cfg.PreAuthTTL != 4*time.Minute {
+		t.Fatal("session/pre-auth durations not loaded")
 	}
-	if !cfg.FileBrowserEnabled {
-		t.Fatal("file_browser_enabled true was not preserved")
+	if cfg.PasswordMaxFailures != 8 || cfg.PasswordFailureWindow != 12*time.Minute || cfg.PasswordLockoutDuration != 45*time.Second || cfg.PasswordHashConcurrency != 3 || cfg.PasswordHashQueueTimeout != 6*time.Second {
+		t.Fatal("password authentication limits not loaded")
 	}
-	if cfg.SessionTTL != 2*time.Hour || cfg.AgentOfflineTimeout != 30*time.Second || cfg.WebRefreshInterval != 4*time.Second {
-		t.Fatal("duration settings not loaded")
+	if cfg.TOTPMaxFailures != 7 || cfg.TOTPFailureWindow != 9*time.Minute || cfg.TOTPLockoutDuration != 35*time.Second {
+		t.Fatal("TOTP authentication limits not loaded")
 	}
-	if cfg.UIResultTTL != 0 {
-		t.Fatalf("unexpected ui ttl: %s", cfg.UIResultTTL)
+	if cfg.ClientIPHeader != "CF-Connecting-IP" || len(cfg.TrustedProxyPrefixes) != 2 {
+		t.Fatal("trusted proxy settings not loaded")
+	}
+	if cfg.AgentOfflineTimeout != 30*time.Second || cfg.WebRefreshInterval != 4*time.Second || cfg.UIResultTTL != 0 {
+		t.Fatal("runtime durations not loaded")
 	}
 	if cfg.FileTransferChunkBytes != 32768 || cfg.MaxFileTransferBytes != 10485760 || cfg.MaxCommandLength != 8192 {
-		t.Fatal("file transfer settings not loaded")
+		t.Fatal("file/command settings not loaded")
+	}
+}
+
+func TestLoadConfigAllowsEmptyBootstrapCredentials(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(path, []byte(`{
+  "listen_addr":"127.0.0.1:8080",
+  "database_path":"homectl.db",
+  "admin_username":"",
+  "admin_password":""
+}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("bootstrap credentials should be validated only when an administrator must be created: %v", err)
+	}
+	if cfg.AdminUsername != "" || cfg.AdminPassword != "" {
+		t.Fatal("empty bootstrap credentials were not preserved")
+	}
+}
+
+func TestLoadConfigRejectsUnknownField(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(path, []byte(`{"listen_addr":":8080","database_path":"homectl.db","typo_option":true}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := LoadConfig(path)
+	if err == nil || !strings.Contains(err.Error(), "unknown field") {
+		t.Fatalf("unknown field was not rejected: %v", err)
+	}
+}
+
+func TestLoadConfigRejectsTrailingJSON(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	data := `{"listen_addr":":8080","database_path":"homectl.db"} {"listen_addr":"127.0.0.1:1"}`
+	if err := os.WriteFile(path, []byte(data), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadConfig(path); err == nil {
+		t.Fatal("trailing JSON value was accepted")
+	}
+}
+
+func TestDeploymentConfigExamplesLoad(t *testing.T) {
+	for _, name := range []string{"config.example.json", "config.binary.example.json"} {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join("..", "..", "deploy", "server", name)
+			if _, err := LoadConfig(path); err != nil {
+				t.Fatalf("load %s: %v", path, err)
+			}
+		})
 	}
 }
