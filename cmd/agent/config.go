@@ -3,10 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 type agentConfig struct {
@@ -81,6 +85,12 @@ func loadAgentConfig(path string) (agentConfig, error) {
 	if err := dec.Decode(&cfg); err != nil {
 		return cfg, fmt.Errorf("decode config %s: %w", path, err)
 	}
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
+		if err == nil {
+			err = fmt.Errorf("multiple JSON values")
+		}
+		return cfg, fmt.Errorf("decode config %s: trailing content: %w", path, err)
+	}
 
 	cfg.Server = strings.TrimSpace(cfg.Server)
 	cfg.Name = strings.TrimSpace(cfg.Name)
@@ -88,11 +98,29 @@ func loadAgentConfig(path string) (agentConfig, error) {
 	cfg.StateFile = strings.TrimSpace(cfg.StateFile)
 	cfg.Shell = strings.TrimSpace(cfg.Shell)
 	cfg.FileBrowserRoot = strings.TrimSpace(cfg.FileBrowserRoot)
+	cfg.CloudflareAccess.ClientID = strings.TrimSpace(cfg.CloudflareAccess.ClientID)
+	cfg.CloudflareAccess.ClientSecret = strings.TrimSpace(cfg.CloudflareAccess.ClientSecret)
 	for i := range cfg.DiskExcludeDevicePrefixes {
 		cfg.DiskExcludeDevicePrefixes[i] = strings.TrimSpace(cfg.DiskExcludeDevicePrefixes[i])
 	}
 	if cfg.Server == "" {
 		return cfg, fmt.Errorf("server is required")
+	}
+	serverURL, err := url.Parse(cfg.Server)
+	if err != nil || (serverURL.Scheme != "ws" && serverURL.Scheme != "wss") || serverURL.Host == "" || serverURL.User != nil || serverURL.Fragment != "" {
+		return cfg, fmt.Errorf("server must be a valid ws:// or wss:// URL without user info or fragment")
+	}
+	if err := validateAgentName(cfg.Name); err != nil {
+		return cfg, err
+	}
+	if len(cfg.EnrollToken) > 512 {
+		return cfg, fmt.Errorf("enroll_token is too long")
+	}
+	if (cfg.CloudflareAccess.ClientID == "") != (cfg.CloudflareAccess.ClientSecret == "") {
+		return cfg, fmt.Errorf("cloudflare_access.client_id and client_secret must be configured together")
+	}
+	if len(cfg.CloudflareAccess.ClientID) > 1024 || len(cfg.CloudflareAccess.ClientSecret) > 4096 {
+		return cfg, fmt.Errorf("cloudflare_access credentials are too long")
 	}
 	if cfg.StateFile == "" {
 		return cfg, fmt.Errorf("state_file is required")
@@ -100,8 +128,11 @@ func loadAgentConfig(path string) (agentConfig, error) {
 	if !filepath.IsAbs(cfg.StateFile) {
 		cfg.StateFile = filepath.Join(filepath.Dir(path), cfg.StateFile)
 	}
-	if cfg.Shell == "" {
-		return cfg, fmt.Errorf("shell is required")
+	if cfg.Shell == "" || !filepath.IsAbs(cfg.Shell) {
+		return cfg, fmt.Errorf("shell must be an absolute path")
+	}
+	if info, err := os.Stat(cfg.Shell); err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0111 == 0 {
+		return cfg, fmt.Errorf("shell must point to an existing executable regular file")
 	}
 	if cfg.FileBrowserRoot == "" {
 		cfg.FileBrowserRoot = "/"
@@ -110,8 +141,8 @@ func loadAgentConfig(path string) (agentConfig, error) {
 		return cfg, fmt.Errorf("file_browser_root must be an absolute path")
 	}
 	cfg.FileBrowserRoot = filepath.Clean(cfg.FileBrowserRoot)
-	if cfg.MaxCommandOutputBytes < 4096 {
-		return cfg, fmt.Errorf("max_command_output_bytes must be at least 4096")
+	if cfg.MaxCommandOutputBytes < 4096 || cfg.MaxCommandOutputBytes > 16<<20 {
+		return cfg, fmt.Errorf("max_command_output_bytes must be between 4096 and 16777216")
 	}
 	if cfg.FileTransferChunkBytes < 4096 || cfg.FileTransferChunkBytes > 512<<10 {
 		return cfg, fmt.Errorf("file_transfer_chunk_bytes must be between 4096 and 524288")
@@ -153,4 +184,19 @@ func positiveDuration(name, value string) (time.Duration, error) {
 		return 0, fmt.Errorf("invalid %s %q", name, value)
 	}
 	return d, nil
+}
+
+func validateAgentName(name string) error {
+	if !utf8.ValidString(name) {
+		return fmt.Errorf("name must be valid UTF-8")
+	}
+	if utf8.RuneCountInString(name) > 128 {
+		return fmt.Errorf("name must be at most 128 characters")
+	}
+	for _, r := range name {
+		if unicode.IsControl(r) {
+			return fmt.Errorf("name must not contain control characters")
+		}
+	}
+	return nil
 }

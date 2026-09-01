@@ -50,3 +50,37 @@ func TestLoadAgentConfigRelativeState(t *testing.T) {
 		t.Fatal("file browser settings not loaded")
 	}
 }
+
+func TestValidateAgentName(t *testing.T) {
+	if err := validateAgentName("客厅-KVM-01"); err != nil {
+		t.Fatalf("valid name rejected: %v", err)
+	}
+	if err := validateAgentName("bad\nname"); err == nil {
+		t.Fatal("control character in agent name was accepted")
+	}
+	tooLong := make([]rune, 129)
+	for i := range tooLong {
+		tooLong[i] = 'a'
+	}
+	if err := validateAgentName(string(tooLong)); err == nil {
+		t.Fatal("overlong agent name was accepted")
+	}
+}
+
+func TestLoadAgentConfigRejectsTrailingJSON(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	data := `{"server":"wss://panel.example.com/agent/ws","shell":"/bin/bash"} {"server":"wss://attacker.invalid/agent/ws"}`
+	if err := os.WriteFile(path, []byte(data), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := loadAgentConfig(path); err == nil {
+		t.Fatal("trailing JSON value was accepted")
+	}
+}
+
+func TestDeploymentConfigExampleLoads(t *testing.T) {
+	path := filepath.Join("..", "..", "deploy", "agent", "config.example.json")
+	if _, err := loadAgentConfig(path); err != nil {
+		t.Fatalf("load %s: %v", path, err)
+	}
+}

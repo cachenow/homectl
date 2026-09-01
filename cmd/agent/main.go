@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	randv2 "math/rand/v2"
 	"net"
 	"net/http"
 	"os"
@@ -31,7 +32,78 @@ import (
 
 var version = "dev"
 
-type termSession struct{ f *os.File }
+const (
+	maxConcurrentActions       = 1
+	maxConcurrentExec          = 4
+	maxConcurrentTerminals     = 4
+	maxConcurrentFileOps       = 8
+	maxConcurrentFileDownloads = 4
+	termInputQueueDepth        = 16
+	maxTermInputBytes          = 64 << 10
+	systemActionTimeout        = 15 * time.Second
+)
+
+type termSession struct {
+	f       *os.File
+	cmd     *exec.Cmd
+	input   chan []byte
+	done    chan struct{}
+	release func()
+	once    sync.Once
+}
+
+func (t *termSession) stop() {
+	if t == nil {
+		return
+	}
+	t.once.Do(func() {
+		if t.done != nil {
+			close(t.done)
+		}
+		if t.f != nil {
+			_ = t.f.Close()
+		}
+		if t.cmd != nil && t.cmd.Process != nil {
+			_ = syscall.Kill(-t.cmd.Process.Pid, syscall.SIGKILL)
+		}
+		if t.release != nil {
+			t.release()
+		}
+	})
+}
+
+func (t *termSession) enqueueInput(data []byte) bool {
+	if t == nil || t.done == nil || t.input == nil {
+		return false
+	}
+	select {
+	case <-t.done:
+		return false
+	default:
+	}
+	select {
+	case <-t.done:
+		return false
+	case t.input <- data:
+		return true
+	default:
+		return false
+	}
+}
+
+func (t *termSession) writeInput() {
+	for {
+		select {
+		case <-t.done:
+			return
+		case data := <-t.input:
+			if _, err := t.f.Write(data); err != nil {
+				t.stop()
+				return
+			}
+		}
+	}
+}
 
 type agent struct {
 	cfg       agentConfig
@@ -45,7 +117,13 @@ type agent struct {
 
 	fileMu    sync.Mutex
 	uploads   map[string]*uploadSession
-	downloads map[string]context.CancelFunc
+	downloads map[string]*downloadSession
+
+	actionSlots       chan struct{}
+	execSlots         chan struct{}
+	termSlots         chan struct{}
+	fileOpSlots       chan struct{}
+	fileDownloadSlots chan struct{}
 
 	cpuMu        sync.Mutex
 	prevCPUTotal uint64
@@ -68,22 +146,50 @@ func main() {
 	}
 	if cfg.Name == "" {
 		cfg.Name, _ = os.Hostname()
+		cfg.Name = strings.TrimSpace(cfg.Name)
+		if cfg.Name == "" {
+			cfg.Name = "linux-agent"
+		}
+		if err := validateAgentName(cfg.Name); err != nil {
+			log.Fatal(err)
+		}
 	}
 	state, err := loadOrCreateState(cfg.StateFile)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if state.DeviceToken == "" && cfg.EnrollToken == "" {
-		log.Fatal("enroll_token is required until this device has enrolled successfully")
+	if state.DeviceToken == "" {
+		if !protocol.ValidEnrollmentToken(cfg.EnrollToken) {
+			log.Fatalf("enroll_token must be exactly %d lowercase hexadecimal characters until this device has enrolled successfully", protocol.EnrollmentTokenLength)
+		}
+		state.DeviceToken, err = randomHex(32)
+		if err != nil {
+			log.Fatal(err)
+		}
+		state.PendingEnrollment = true
+		if err := saveState(cfg.StateFile, state); err != nil {
+			log.Fatalf("save pending device identity: %v", err)
+		}
+	}
+	if state.PendingEnrollment && !protocol.ValidEnrollmentToken(cfg.EnrollToken) {
+		log.Fatalf("enroll_token must be exactly %d lowercase hexadecimal characters until this device has enrolled successfully", protocol.EnrollmentTokenLength)
+	}
+	if !state.PendingEnrollment {
+		cfg.EnrollToken = ""
 	}
 
 	a := &agent{
-		cfg:       cfg,
-		statePath: cfg.StateFile,
-		state:     state,
-		terms:     make(map[string]*termSession),
-		uploads:   make(map[string]*uploadSession),
-		downloads: make(map[string]context.CancelFunc),
+		cfg:               cfg,
+		statePath:         cfg.StateFile,
+		state:             state,
+		terms:             make(map[string]*termSession),
+		uploads:           make(map[string]*uploadSession),
+		downloads:         make(map[string]*downloadSession),
+		actionSlots:       make(chan struct{}, maxConcurrentActions),
+		execSlots:         make(chan struct{}, maxConcurrentExec),
+		termSlots:         make(chan struct{}, maxConcurrentTerminals),
+		fileOpSlots:       make(chan struct{}, maxConcurrentFileOps),
+		fileDownloadSlots: make(chan struct{}, maxConcurrentFileDownloads),
 	}
 	log.Printf("homectl-agent %s starting as %s (%s), config=%s", version, cfg.Name, state.DeviceID, *configPath)
 
@@ -98,21 +204,42 @@ func main() {
 		if connectedFor >= time.Minute {
 			backoff = cfg.reconnectMinDur
 		}
-		time.Sleep(backoff)
-		backoff *= 2
-		if backoff > cfg.reconnectMaxDur {
+		time.Sleep(jitteredReconnectDelay(backoff, cfg.reconnectMaxDur))
+		if backoff > cfg.reconnectMaxDur-backoff {
 			backoff = cfg.reconnectMaxDur
+		} else {
+			backoff += backoff
 		}
 	}
+}
+
+func jitteredReconnectDelay(base, maximum time.Duration) time.Duration {
+	if base <= 0 || maximum <= 0 {
+		return base
+	}
+	spread := base / 5
+	if spread <= 0 {
+		return min(base, maximum)
+	}
+	offset := time.Duration(randv2.Int64N(int64(spread) + 1))
+	if randv2.Int64N(2) == 0 {
+		return base - offset
+	}
+	if base > maximum-offset {
+		return maximum
+	}
+	return base + offset
 }
 
 func (a *agent) run() (time.Duration, error) {
 	a.stateMu.Lock()
 	token := a.state.DeviceToken
 	deviceID := a.state.DeviceID
+	pendingEnrollment := a.state.PendingEnrollment
 	a.stateMu.Unlock()
-	if token == "" {
-		token = a.cfg.EnrollToken
+	enrollmentToken := ""
+	if pendingEnrollment {
+		enrollmentToken = a.cfg.EnrollToken
 	}
 
 	headers := http.Header{}
@@ -137,7 +264,17 @@ func (a *agent) run() (time.Duration, error) {
 	defer c.CloseNow()
 	c.SetReadLimit(2 << 20)
 
-	if err := a.send(c, protocol.Message{Type: "hello", DeviceID: deviceID, Name: a.cfg.Name, Token: token}); err != nil {
+	if err := a.send(c, protocol.Message{
+		Type:            "hello",
+		DeviceID:        deviceID,
+		Name:            a.cfg.Name,
+		Token:           token,
+		EnrollmentToken: enrollmentToken,
+		Capabilities: []string{
+			protocol.CapabilityFileDownloadCredits,
+			protocol.CapabilityFileUploadCredits,
+		},
+	}); err != nil {
 		return 0, err
 	}
 	var ack protocol.Message
@@ -150,15 +287,22 @@ func (a *agent) run() (time.Duration, error) {
 	if ack.Type != "hello_ack" {
 		return 0, fmt.Errorf("unexpected handshake response")
 	}
-	if ack.DeviceToken != "" {
+	if ack.DeviceToken != "" && !protocol.ValidDeviceToken(ack.DeviceToken) {
+		return 0, fmt.Errorf("server returned an invalid device token")
+	}
+	if pendingEnrollment || ack.DeviceToken != "" {
 		a.stateMu.Lock()
-		a.state.DeviceToken = ack.DeviceToken
+		if ack.DeviceToken != "" {
+			a.state.DeviceToken = ack.DeviceToken
+		}
+		a.state.PendingEnrollment = false
 		err := saveState(a.statePath, a.state)
 		a.stateMu.Unlock()
 		if err != nil {
-			return 0, fmt.Errorf("save enrolled device token: %w", err)
+			return 0, fmt.Errorf("save enrolled device identity: %w", err)
 		}
-		log.Printf("enrollment complete; device token saved to %s", a.statePath)
+		a.cfg.EnrollToken = ""
+		log.Printf("enrollment complete; device identity saved to %s", a.statePath)
 	}
 
 	connectedAt := time.Now()
@@ -171,29 +315,31 @@ func (a *agent) run() (time.Duration, error) {
 		}
 		switch m.Type {
 		case "action":
-			go a.handleAction(c, m)
+			a.startAction(c, m)
 		case "exec":
-			go a.handleExec(c, m)
+			a.startExec(c, m)
 		case "term_open":
-			go a.openTerm(c, m)
+			a.startTerm(c, m)
 		case "term_input":
-			a.termInput(m)
+			a.termInput(c, m)
 		case "term_resize":
 			a.termResize(m)
 		case "term_close":
 			a.termClose(m.SessionID)
 		case "file_list":
-			go a.handleFileList(c, m)
+			a.startFileOp(c, m, a.handleFileList)
 		case "file_mkdir":
-			go a.handleFileMkdir(c, m)
+			a.startFileOp(c, m, a.handleFileMkdir)
 		case "file_delete":
-			go a.handleFileDelete(c, m)
+			a.startFileOp(c, m, a.handleFileDelete)
 		case "file_rename":
-			go a.handleFileRename(c, m)
+			a.startFileOp(c, m, a.handleFileRename)
 		case "file_download":
-			go a.handleFileDownload(c, m)
+			a.startFileDownload(c, m)
 		case "file_cancel":
 			a.handleFileCancel(m)
+		case "file_credit":
+			a.handleFileCredit(m)
 		case "file_upload_start":
 			a.handleFileUploadStart(c, m)
 		case "file_upload_chunk":
@@ -204,6 +350,54 @@ func (a *agent) run() (time.Duration, error) {
 			a.handleFileUploadAbort(m)
 		}
 	}
+}
+
+func acquireSlot(slots chan struct{}) bool {
+	select {
+	case slots <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}
+
+func releaseSlot(slots chan struct{}) func() {
+	var once sync.Once
+	return func() {
+		once.Do(func() { <-slots })
+	}
+}
+
+func (a *agent) startAction(c *websocket.Conn, m protocol.Message) {
+	if !acquireSlot(a.actionSlots) {
+		_ = a.send(c, protocol.Message{Type: "command_result", RequestID: m.RequestID, Error: "another system action is already in progress"})
+		return
+	}
+	release := releaseSlot(a.actionSlots)
+	go func() {
+		defer release()
+		a.handleAction(c, m)
+	}()
+}
+
+func (a *agent) startExec(c *websocket.Conn, m protocol.Message) {
+	if !acquireSlot(a.execSlots) {
+		_ = a.send(c, protocol.Message{Type: "command_result", RequestID: m.RequestID, Error: "too many concurrent commands"})
+		return
+	}
+	release := releaseSlot(a.execSlots)
+	go func() {
+		defer release()
+		a.handleExec(c, m)
+	}()
+}
+
+func (a *agent) startTerm(c *websocket.Conn, m protocol.Message) {
+	if !acquireSlot(a.termSlots) {
+		_ = a.send(c, protocol.Message{Type: "term_exit", SessionID: m.SessionID, Error: "too many concurrent terminals"})
+		return
+	}
+	go a.openTerm(c, m, releaseSlot(a.termSlots))
 }
 
 func (a *agent) send(c *websocket.Conn, m protocol.Message) error {
@@ -235,15 +429,37 @@ func (a *agent) handleAction(c *websocket.Conn, m protocol.Message) {
 		_ = a.send(c, protocol.Message{Type: "command_result", RequestID: m.RequestID, Error: "unsupported action"})
 		return
 	}
+	commands := actionCommandCandidates(m.Action)
+	if len(commands) == 0 {
+		_ = a.send(c, protocol.Message{Type: "command_result", RequestID: m.RequestID, Error: "no supported system action command found"})
+		return
+	}
 	_ = a.send(c, protocol.Message{Type: "command_result", RequestID: m.RequestID, Data: "accepted"})
 	time.Sleep(500 * time.Millisecond)
-	cmd := "reboot"
-	if m.Action == "poweroff" {
-		cmd = "poweroff"
+	for _, command := range commands {
+		ctx, cancel := context.WithTimeout(context.Background(), systemActionTimeout)
+		err := exec.CommandContext(ctx, command[0], command[1:]...).Run()
+		cancel()
+		if err == nil {
+			return
+		}
+		log.Printf("%s failed: %v", strings.Join(command, " "), err)
 	}
-	if err := exec.Command("systemctl", cmd).Run(); err != nil {
-		log.Printf("systemctl %s failed: %v", cmd, err)
+}
+
+func actionCommandCandidates(action string) [][]string {
+	command := "reboot"
+	if action == "poweroff" {
+		command = "poweroff"
 	}
+	var candidates [][]string
+	if systemctl, err := exec.LookPath("systemctl"); err == nil {
+		candidates = append(candidates, []string{systemctl, command})
+	}
+	if direct, err := exec.LookPath(command); err == nil {
+		candidates = append(candidates, []string{direct})
+	}
+	return candidates
 }
 
 func (a *agent) handleExec(c *websocket.Conn, m protocol.Message) {
@@ -254,11 +470,23 @@ func (a *agent) handleExec(c *websocket.Conn, m protocol.Message) {
 	ctx, cancel := context.WithTimeout(context.Background(), a.cfg.commandTimeoutDur)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, a.cfg.Shell, "-lc", m.Command)
-	out, err := cmd.CombinedOutput()
-	if len(out) > a.cfg.MaxCommandOutputBytes {
-		out = append(out[:a.cfg.MaxCommandOutputBytes], []byte("\n[output truncated]\n")...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.Cancel = func() error {
+		if cmd.Process == nil {
+			return os.ErrProcessDone
+		}
+		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		if errors.Is(err, syscall.ESRCH) {
+			return os.ErrProcessDone
+		}
+		return err
 	}
-	res := protocol.Message{Type: "command_result", RequestID: m.RequestID, Data: string(out)}
+	cmd.WaitDelay = 2 * time.Second
+	out := newCappedOutput(a.cfg.MaxCommandOutputBytes)
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err := cmd.Run()
+	res := protocol.Message{Type: "command_result", RequestID: m.RequestID, Data: out.String()}
 	if ctx.Err() == context.DeadlineExceeded {
 		res.Error = "command timeout"
 		res.ExitCode = -1
@@ -274,7 +502,13 @@ func (a *agent) handleExec(c *websocket.Conn, m protocol.Message) {
 	_ = a.send(c, res)
 }
 
-func (a *agent) openTerm(c *websocket.Conn, m protocol.Message) {
+func (a *agent) openTerm(c *websocket.Conn, m protocol.Message, release func()) {
+	slotOwned := true
+	defer func() {
+		if slotOwned {
+			release()
+		}
+	}()
 	if !a.cfg.TerminalEnabled {
 		_ = a.send(c, protocol.Message{Type: "term_exit", SessionID: m.SessionID, Error: "terminal disabled by agent config"})
 		return
@@ -293,38 +527,72 @@ func (a *agent) openTerm(c *websocket.Conn, m protocol.Message) {
 		_ = a.send(c, protocol.Message{Type: "term_exit", SessionID: m.SessionID, Error: err.Error()})
 		return
 	}
+	t := &termSession{
+		f:       f,
+		cmd:     cmd,
+		input:   make(chan []byte, termInputQueueDepth),
+		done:    make(chan struct{}),
+		release: release,
+	}
+	slotOwned = false
 	a.termMu.Lock()
-	a.terms[m.SessionID] = &termSession{f: f}
+	old := a.terms[m.SessionID]
+	a.terms[m.SessionID] = t
 	a.termMu.Unlock()
-	defer a.termClose(m.SessionID)
+	if old != nil {
+		old.stop()
+	}
+	go t.writeInput()
 
 	buf := make([]byte, 32<<10)
+	var readErr error
 	for {
 		n, err := f.Read(buf)
 		if n > 0 {
 			_ = a.send(c, protocol.Message{Type: "term_data", SessionID: m.SessionID, Data: base64.StdEncoding.EncodeToString(buf[:n])})
 		}
 		if err != nil {
-			msg := protocol.Message{Type: "term_exit", SessionID: m.SessionID}
-			if err != io.EOF {
-				msg.Error = err.Error()
-			}
-			_ = a.send(c, msg)
-			return
+			readErr = err
+			break
 		}
 	}
+	owned := a.finishTerm(m.SessionID, t)
+	_ = cmd.Wait()
+	if !owned {
+		return
+	}
+	msg := protocol.Message{Type: "term_exit", SessionID: m.SessionID}
+	if readErr != io.EOF && !errors.Is(readErr, syscall.EIO) && !errors.Is(readErr, os.ErrClosed) {
+		msg.Error = readErr.Error()
+	}
+	_ = a.send(c, msg)
 }
 
-func (a *agent) termInput(m protocol.Message) {
+func (a *agent) termInput(c *websocket.Conn, m protocol.Message) {
 	b, err := base64.StdEncoding.DecodeString(m.Data)
-	if err != nil {
+	if err != nil || len(b) == 0 {
 		return
 	}
 	a.termMu.Lock()
 	t := a.terms[m.SessionID]
 	a.termMu.Unlock()
-	if t != nil {
-		_, _ = t.f.Write(b)
+	if t == nil {
+		return
+	}
+	if len(b) <= maxTermInputBytes && t.enqueueInput(b) {
+		return
+	}
+	a.termMu.Lock()
+	owned := a.terms[m.SessionID] == t
+	if owned {
+		delete(a.terms, m.SessionID)
+	}
+	a.termMu.Unlock()
+	if owned {
+		t.stop()
+		go func() {
+			_ = a.send(c, protocol.Message{Type: "term_exit", SessionID: m.SessionID, Error: "terminal input exceeded its bounded queue"})
+		}()
 	}
 }
 
@@ -342,17 +610,30 @@ func (a *agent) termClose(id string) {
 	t := a.terms[id]
 	delete(a.terms, id)
 	a.termMu.Unlock()
-	if t != nil {
-		_ = t.f.Close()
+	t.stop()
+}
+
+func (a *agent) finishTerm(id string, t *termSession) bool {
+	a.termMu.Lock()
+	owned := a.terms[id] == t
+	if owned {
+		delete(a.terms, id)
 	}
+	a.termMu.Unlock()
+	t.stop()
+	return owned
 }
 
 func (a *agent) closeTerms() {
 	a.termMu.Lock()
-	defer a.termMu.Unlock()
+	terms := make([]*termSession, 0, len(a.terms))
 	for id, t := range a.terms {
-		_ = t.f.Close()
+		terms = append(terms, t)
 		delete(a.terms, id)
+	}
+	a.termMu.Unlock()
+	for _, t := range terms {
+		t.stop()
 	}
 }
 
