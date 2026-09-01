@@ -1,5 +1,7 @@
 # HomeCTL
 
+<img width="1248" height="743" alt="demo" src="https://github.com/user-attachments/assets/2fee4685-14e0-485d-9ebb-d3eb7ba46921" />
+
 HomeCTL 是一个面向家庭网络、实验室和小型私有环境的轻量 Linux 远程管理面板。它由一个 Go Server 和每台受控 Linux 主机上的 Go Agent 组成。
 
 Agent **主动**建立到 Server 的 WSS 长连接，因此家庭宽带没有公网 IP、Agent 主机无法开放入站端口时也可以使用。状态上报、命令、终端和按需文件操作复用同一条连接。
