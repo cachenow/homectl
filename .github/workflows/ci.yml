@@ -8,21 +8,29 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.27.x"
+          go-version-file: go.mod
           cache: true
+          cache-dependency-path: go.sum
 
-      - name: Resolve modules
-        run: go mod tidy
+      - name: Verify module files
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
 
       - name: Format check
         run: |
@@ -33,13 +41,19 @@ jobs:
           }
 
       - name: Test
-        run: go test ./...
+        run: go test -count=1 ./...
+
+      - name: Race test
+        run: go test -race -count=1 ./...
 
       - name: Vet
         run: go vet ./...
 
-      - name: Build server
-        run: CGO_ENABLED=0 go build -trimpath ./cmd/server
-
-      - name: Build agent
-        run: CGO_ENABLED=0 go build -trimpath ./cmd/agent
+      - name: Cross-build release targets
+        shell: bash
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -trimpath -o /tmp/homectl-server-amd64 ./cmd/server
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -buildvcs=false -trimpath -o /tmp/homectl-server-arm64 ./cmd/server
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -trimpath -o /tmp/homectl-agent-amd64 ./cmd/agent
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -buildvcs=false -trimpath -o /tmp/homectl-agent-arm64 ./cmd/agent
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -buildvcs=false -trimpath -o /tmp/homectl-agent-armv7 ./cmd/agent
