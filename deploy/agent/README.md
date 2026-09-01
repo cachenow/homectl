@@ -1,58 +1,27 @@
-# HomeCTL Agent deployment
+# HomeCTL Agent
 
-标准安装目录：
-
-```text
-/opt/homectl-agent/
-├── homectl-agent
-├── config.json
-└── state.json       # 首次运行自动创建
-```
-
-先在 HomeCTL Web → **设备管理 → 添加设备** 生成一个 **一次性 Agent Token**，填写到 `config.json` 的 `enroll_token`。
-
-然后以 root 运行：
+1. 在 HomeCTL Web 的“设备管理”中生成一次性 Enrollment Token。
+2. 编辑 `config.json`：填写 `server` 和 `enroll_token`。
+3. 安装：
 
 ```bash
 ./install.sh
 ```
 
-无需环境变量。
-
-首次注册成功后 `state.json` 会保存本机独立 Device Token。此后可以把 `config.json` 中旧的一次性 `enroll_token` 清空。
-
-默认：
-
-```text
-heartbeat_interval 10s
-handshake_timeout  15s
-write_timeout      10s
-```
-
-
-存储信息分成两部分：物理容量直接读取 `/sys/class/block/*/size` 并按底层设备去重；文件系统使用率通过 `/proc/self/mountinfo` + `/sys/dev/block` + `statfs()` 汇总本地块设备。这样不会把 `/` 根分区的大小误当成整块磁盘容量。
-
-文件系统统计默认排除 loop/zram/ram；需要调整时可在 `config.json` 中设置：
-
-```json
-"disk_exclude_device_prefixes": ["/dev/loop", "/dev/zram", "/dev/ram"]
-```
-
-文件浏览器默认关闭，不会产生额外周期性文件系统负载。需要时设置：
-
-```json
-"file_browser_enabled": true,
-"file_browser_root": "/"
-```
-
-查看日志：
+检查：
 
 ```bash
+# systemd
+systemctl status homectl-agent
 journalctl -u homectl-agent -f
+
+# OpenWrt procd
+/etc/init.d/homectl-agent status
+logread -f
 ```
 
-升级：替换 `/opt/homectl-agent/homectl-agent` 后：
+安装脚本会自动识别正在运行的 systemd 或 OpenWrt procd。OpenWrt 上还需把 `config.json` 的 `shell` 改成实际存在的绝对路径，通常为 `/bin/ash`。
 
-```bash
-systemctl restart homectl-agent
-```
+首次注册成功后 `state.json` 会保存该设备独立的长期 Device Token，此后可清空 `config.json` 中的一次性 `enroll_token`。
+
+完整说明请查看项目仓库 `docs/AGENT.md` 和 `docs/CONFIGURATION.md`。
