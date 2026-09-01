@@ -4,102 +4,208 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, e.g. v0.1.0"
+        description: "Release version, e.g. v1.0.0"
         required: true
-        default: "v0.3.6"
+        default: "v1.0.0"
 
-permissions:
-  contents: write
-  packages: write
+permissions: {}
+
+concurrency:
+  group: homectl-release
+  cancel-in-progress: false
 
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.vars.outputs.version }}
+      image: ${{ steps.vars.outputs.image }}
+      prerelease: ${{ steps.vars.outputs.prerelease }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Build metadata
+      - name: Validate build metadata
         id: vars
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
         shell: bash
         run: |
-          VERSION="${{ github.event.inputs.version }}"
-          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "version must look like v0.3.6" >&2
+          VERSION="$VERSION_INPUT"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "version must look like v1.0.0 or v1.0.0-rc.1" >&2
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: "1.27.x"
-          cache: true
-
-      - name: Resolve modules and test
-        run: |
-          go mod tidy
-          test -z "$(gofmt -l cmd internal)" || {
-            echo "Go files are not gofmt formatted:"
-            gofmt -l cmd internal
-            exit 1
-          }
-          go test ./...
-          go vet ./...
-
-      - name: Build release assets
-        run: bash ./scripts/build-release.sh "${{ steps.vars.outputs.version }}"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push multi-arch server image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          build-args: |
-            VERSION=${{ steps.vars.outputs.version }}
-          tags: |
-            ${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.version }}
-            ${{ steps.vars.outputs.image }}:latest
-
-      - name: Upload Actions artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: homectl-${{ steps.vars.outputs.version }}
-          path: dist/*
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Publish GitHub Release
+      - name: Reject an existing release version
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.vars.outputs.version }}
         shell: bash
         run: |
           if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $VERSION already exists; replacing assets"
-            gh release upload "$VERSION" dist/* \
-              --repo "$GITHUB_REPOSITORY" \
-              --clobber
-          else
-            gh release create "$VERSION" dist/* \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "HomeCTL $VERSION" \
-              --generate-notes \
-              --latest
+            echo "Release $VERSION already exists; choose a new version." >&2
+            exit 1
           fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists; choose a new version." >&2
+            exit 1
+          fi
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Verify and test source
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+          test -z "$(gofmt -l cmd internal)" || {
+            echo "Go files are not gofmt formatted:"
+            gofmt -l cmd internal
+            exit 1
+          }
+          go test -count=1 ./...
+          go vet ./...
+
+      - name: Install optional UPX
+        continue-on-error: true
+        shell: bash
+        run: |
+          UPX_VERSION=5.2.1
+          ARCHIVE="upx-${UPX_VERSION}-amd64_linux.tar.xz"
+          URL="https://github.com/upx/upx/releases/download/v${UPX_VERSION}/${ARCHIVE}"
+          EXPECTED="402162aad30af47e60dbd767fb2e64ca394ace9727ba1f40283641f1d1b91657"
+          curl -fL --retry 3 --retry-delay 2 -o "/tmp/${ARCHIVE}" "$URL"
+          echo "${EXPECTED}  /tmp/${ARCHIVE}" | sha256sum -c -
+          mkdir -p /tmp/upx
+          tar -xJf "/tmp/${ARCHIVE}" -C /tmp/upx --strip-components=1
+          echo "/tmp/upx" >> "$GITHUB_PATH"
+
+      - name: Build release assets
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: bash ./scripts/build-release.sh "$VERSION"
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: homectl-${{ needs.validate.outputs.version }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  docker-version:
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push versioned multi-arch image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ needs.validate.outputs.version }}
+          tags: ${{ needs.validate.outputs.image }}:${{ needs.validate.outputs.version }}
+
+  release:
+    needs: [validate, build, docker-version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: homectl-${{ needs.validate.outputs.version }}
+          path: dist
+
+      - name: Verify checksums
+        run: cd dist && sha256sum -c SHA256SUMS
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          PRERELEASE: ${{ needs.validate.outputs.prerelease }}
+        shell: bash
+        run: |
+          release_flag=--latest
+          if [[ "$PRERELEASE" == "true" ]]; then
+            release_flag=--prerelease
+          fi
+          gh release create "$VERSION" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "HomeCTL $VERSION" \
+            --generate-notes \
+            "$release_flag"
+
+  promote-latest:
+    needs: [validate, release]
+    if: needs.validate.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote the released image to latest
+        env:
+          IMAGE: ${{ needs.validate.outputs.image }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        shell: bash
+        run: docker buildx imagetools create --tag "$IMAGE:latest" "$IMAGE:$VERSION"
