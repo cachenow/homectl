@@ -1,5 +1,4 @@
-# Source-tree development deployment.
-# GitHub Releases contain a prebuilt deployment bundle that uses the GHCR image instead.
+# Source checkout deployment.
 services:
   homectl:
     build:
@@ -7,6 +6,8 @@ services:
       args:
         VERSION: dev
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - ./deploy/server/config.json:/app/config.json:ro
       - ./data:/data
@@ -14,8 +15,10 @@ services:
       - "127.0.0.1:8080:8080"
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.8.3@sha256:51c9cefcb4569df44e1ad403ab1d3d8065aa8e84339bcfc6aee75502e1140339
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       - homectl
     network_mode: "service:homectl"
