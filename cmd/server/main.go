@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"flag"
+	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
@@ -25,7 +26,7 @@ func main() {
 	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
 	if *showVersion {
-		log.Printf("homectl-server %s", version)
+		fmt.Printf("homectl-server %s\n", version)
 		return
 	}
 
@@ -44,6 +45,7 @@ func main() {
 	if err := store.EnsureAdmin(cfg.AdminUsername, cfg.AdminPassword); err != nil {
 		log.Fatal(err)
 	}
+	cfg.AdminPassword = ""
 	if cfg.LegacyDeviceStore != "" {
 		n, err := store.ImportLegacyDeviceJSON(cfg.LegacyDeviceStore)
 		if err != nil {
@@ -64,12 +66,14 @@ func main() {
 		Addr:              cfg.Addr,
 		Handler:           s.Handler(http.FS(webRoot)),
 		ReadHeaderTimeout: cfg.HTTPReadHeaderTimeout,
+		MaxHeaderBytes:    64 << 10,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	go func() {
 		<-ctx.Done()
+		s.Shutdown()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 		defer cancel()
 		_ = httpServer.Shutdown(shutdownCtx)
