@@ -1,0 +1,19 @@
+[Unit]
+Description=HomeCTL Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=homectl
+Group=homectl
+WorkingDirectory=/opt/homectl-server
+ExecStart=/opt/homectl-server/homectl-server -config /opt/homectl-server/config.json
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
