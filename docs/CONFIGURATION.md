@@ -65,7 +65,7 @@ HomeCTL 只在直接 TCP 对端属于 `trusted_proxy_cidrs` 时读取该 Header�
 | 参数 | 默认值 | 说明 |
 |---|---:|---|
 | `server` | 必填 | Server Agent WebSocket URL，必须是合法的 `ws://` 或 `wss://` URL，例如 `wss://panel.example.com/agent/ws`。 |
-| `name` | `""` | 首次注册时的默认显示名；为空时使用主机 hostname。最长 128 字符。控制台自定义名称后不会被心跳覆盖。 |
+| `name` | `""` | 首次注册名称的后备值。Web 生成 Token 时填写的“首次显示名称”优先且保留大小写；Web 留空时使用此值，此值也为空时才使用 hostname。最长 128 字符。已保存的控制台名称不会被心跳覆盖。 |
 | `enroll_token` | `""` | 首次注册使用的一次性 Token。注册完成后不再参与设备认证，可从配置中清空。 |
 | `state_file` | `state.json` | Agent 身份状态文件；相对路径按配置文件目录解析。 |
 | `heartbeat_interval` | `10s` | 心跳及轻量系统信息上报周期。 |

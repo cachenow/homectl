@@ -577,6 +577,14 @@ func (s *Store) CleanupSessions() error {
 }
 
 func (s *Store) CreateEnrollmentToken(id, label, token string, expiresAt int64) error {
+	label = strings.TrimSpace(label)
+	if label != "" {
+		var err error
+		label, err = normalizeDeviceName(label)
+		if err != nil {
+			return err
+		}
+	}
 	_, err := s.db.Exec(`INSERT INTO enrollment_tokens(id,label,token_hash,created_at,expires_at,used_at) VALUES(?,?,?,?,?,0)`,
 		id, label, hashToken(token), time.Now().Unix(), expiresAt)
 	return err
@@ -610,6 +618,14 @@ func (s *Store) EnrollDevice(enrollmentToken string, d *DeviceRecord) (bool, err
 	}
 	defer tx.Rollback()
 	now := time.Now().Unix()
+	var label string
+	err = tx.QueryRow(`SELECT label FROM enrollment_tokens WHERE token_hash=? AND used_at=0 AND expires_at>=?`, hashToken(enrollmentToken), now).Scan(&label)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
 	res, err := tx.Exec(`UPDATE enrollment_tokens SET used_at=? WHERE token_hash=? AND used_at=0 AND expires_at>=?`, now, hashToken(enrollmentToken), now)
 	if err != nil {
 		return false, err
@@ -618,7 +634,16 @@ func (s *Store) EnrollDevice(enrollmentToken string, d *DeviceRecord) (bool, err
 	if err != nil || n != 1 {
 		return false, err
 	}
-	if _, err := tx.Exec(`INSERT INTO devices(id,name,token_hash,last_seen,info_json) VALUES(?,?,?,?,?)`, d.ID, d.Name, d.TokenHash, d.LastSeen, infoJSON); err != nil {
+	initialName := d.Name
+	if label = strings.TrimSpace(label); label != "" {
+		// Labels created by current versions are already validated. Falling back
+		// keeps enrollment compatible with older databases that may contain a
+		// legacy label which is not a valid device display name.
+		if normalized, normalizeErr := normalizeDeviceName(label); normalizeErr == nil {
+			initialName = normalized
+		}
+	}
+	if _, err := tx.Exec(`INSERT INTO devices(id,name,token_hash,last_seen,info_json) VALUES(?,?,?,?,?)`, d.ID, initialName, d.TokenHash, d.LastSeen, infoJSON); err != nil {
 		return false, err
 	}
 	if err := tx.Commit(); err != nil {

@@ -1,8 +1,10 @@
 package server
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -136,6 +138,47 @@ func TestDeploymentConfigExamplesLoad(t *testing.T) {
 			if _, err := LoadConfig(path); err != nil {
 				t.Fatalf("load %s: %v", path, err)
 			}
+			requireCompleteJSONConfig(t, path, reflect.TypeOf(fileConfig{}))
 		})
+	}
+}
+
+func requireCompleteJSONConfig(t *testing.T, path string, configType reflect.Type) {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var values map[string]json.RawMessage
+	if err := json.Unmarshal(b, &values); err != nil {
+		t.Fatal(err)
+	}
+	requireJSONFields(t, path, values, configType)
+}
+
+func requireJSONFields(t *testing.T, path string, values map[string]json.RawMessage, configType reflect.Type) {
+	t.Helper()
+	for i := 0; i < configType.NumField(); i++ {
+		field := configType.Field(i)
+		if field.PkgPath != "" {
+			continue
+		}
+		name := strings.Split(field.Tag.Get("json"), ",")[0]
+		if name == "" || name == "-" {
+			continue
+		}
+		raw, ok := values[name]
+		if !ok {
+			t.Errorf("%s is missing configurable field %q", path, name)
+			continue
+		}
+		if field.Type.Kind() == reflect.Struct {
+			var nested map[string]json.RawMessage
+			if err := json.Unmarshal(raw, &nested); err != nil {
+				t.Errorf("%s field %q is not an object: %v", path, name, err)
+				continue
+			}
+			requireJSONFields(t, path+"."+name, nested, field.Type)
+		}
 	}
 }

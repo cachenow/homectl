@@ -120,7 +120,7 @@ var errPendingBackpressure = errors.New("device response exceeded the bounded re
 
 const (
 	passwordHashQueueCapacity  = 2
-	browserTermQueueCapacity   = 16
+	browserTermQueueCapacity   = 32
 	pendingQueueCapacity       = 8
 	initialFileDownloadCredits = 4
 	initialFileUploadCredits   = 4
@@ -201,9 +201,14 @@ func securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' ws: wss:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			w.Header().Set("Cache-Control", "no-store")
+		} else if strings.HasPrefix(r.URL.Path, "/vendor/xterm/") &&
+			(strings.HasSuffix(r.URL.Path, ".mjs") || strings.HasSuffix(r.URL.Path, ".css")) {
+			// Runtime asset filenames include their package version, so they can be
+			// cached permanently without making upgrades serve stale code.
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -911,6 +916,7 @@ func (s *Server) handleTerminalWS(w http.ResponseWriter, r *http.Request) {
 	if err := s.sendAgent(agent, protocol.Message{Type: "term_open", SessionID: sid, Cols: cols, Rows: rows}); err != nil {
 		return
 	}
+	lastCols, lastRows := cols, rows
 	for {
 		var in struct {
 			Type string `json:"type"`
@@ -923,11 +929,23 @@ func (s *Server) handleTerminalWS(w http.ResponseWriter, r *http.Request) {
 		}
 		switch in.Type {
 		case "input":
-			_ = s.sendAgent(agent, protocol.Message{Type: "term_input", SessionID: sid, Data: in.Data})
+			if err := s.sendAgent(agent, protocol.Message{Type: "term_input", SessionID: sid, Data: in.Data}); err != nil {
+				return
+			}
 		case "resize":
-			_ = s.sendAgent(agent, protocol.Message{Type: "term_resize", SessionID: sid, Cols: in.Cols, Rows: in.Rows})
+			if !validTerminalSize(in.Cols, in.Rows) || in.Cols == lastCols && in.Rows == lastRows {
+				continue
+			}
+			if err := s.sendAgent(agent, protocol.Message{Type: "term_resize", SessionID: sid, Cols: in.Cols, Rows: in.Rows}); err != nil {
+				return
+			}
+			lastCols, lastRows = in.Cols, in.Rows
 		}
 	}
+}
+
+func validTerminalSize(cols, rows uint16) bool {
+	return cols >= 8 && cols <= 1000 && rows >= 8 && rows <= 1000
 }
 
 func parseTerminalDimension(raw string, fallback uint16) uint16 {

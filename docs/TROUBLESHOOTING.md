@@ -80,14 +80,17 @@ Server agent_offline_timeout 25s
 
 `agent_offline_timeout` 应大于心跳周期至少 2 倍。Web 默认每 5 秒刷新，因此默认最慢约 25–30 秒反映离线。
 
-## Terminal 外框很大但 htop 仍很小
+## Terminal 缩放异常或交互程序在缩放后结束
 
-HomeCTL 会在创建 PTY 前把浏览器实际 `cols/rows` 传给 Server，并在窗口缩放后继续发送 `term_resize`。如果仍异常：
+HomeCTL 会在创建 PTY 前传递浏览器实际 `cols/rows`。拖动窗口时，浏览器先立即适配本地画布，停止拖动后再向远端发送一次稳定尺寸；Server 和 Agent 还会拒绝非法尺寸并忽略重复尺寸，避免连续 `SIGWINCH` 让 `htop`、`vim` 等交互程序反复重绘。该逻辑不针对特定程序。
+
+如果缩放后仍显示异常或终端连接被关闭：
 
 1. 强制刷新浏览器缓存。
-2. 确认 Server 已升级到最新版本。
-3. 浏览器开发者工具 Console 检查 `terminal fit failed`。
-4. 确认 xterm.js 和 FitAddon CDN 可访问。
+2. 确认 Server 与 Agent 都已升级；只更新一端无法获得完整修复。
+3. 浏览器开发者工具 Console 检查 `terminal fit failed` 或 WebSocket 关闭信息。
+4. 同时查看 Server 与 Agent 日志，确认没有写入超时、网络断开或资源上限错误。
+5. 在浏览器 Network 中确认 `/vendor/xterm/xterm-6.0.0.mjs`、`addon-fit-0.11.0.mjs` 和 `xterm-6.0.0.css` 均返回 200。这些文件已嵌入 Server 二进制，不依赖外部 CDN；若返回 404，通常说明仍在运行旧版 Server。
 
 ## 文件浏览器按钮没有出现
 

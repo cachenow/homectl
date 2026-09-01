@@ -942,9 +942,13 @@ func (s *Server) handleCreateEnrollmentToken(w http.ResponseWriter, r *http.Requ
 	}
 	_ = json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&in)
 	in.Label = strings.TrimSpace(in.Label)
-	if len(in.Label) > 100 {
-		http.Error(w, "label too long", http.StatusBadRequest)
-		return
+	if in.Label != "" {
+		var err error
+		in.Label, err = normalizeDeviceName(in.Label)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 	_ = s.store.CleanupEnrollmentTokens()
 	id := randomToken(8)

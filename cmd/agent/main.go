@@ -50,6 +50,9 @@ type termSession struct {
 	done    chan struct{}
 	release func()
 	once    sync.Once
+	sizeMu  sync.Mutex
+	cols    uint16
+	rows    uint16
 }
 
 func (t *termSession) stop() {
@@ -103,6 +106,19 @@ func (t *termSession) writeInput() {
 			}
 		}
 	}
+}
+
+func (t *termSession) claimResize(cols, rows uint16) bool {
+	if cols < 8 || cols > 1000 || rows < 8 || rows > 1000 {
+		return false
+	}
+	t.sizeMu.Lock()
+	defer t.sizeMu.Unlock()
+	if t.cols == cols && t.rows == rows {
+		return false
+	}
+	t.cols, t.rows = cols, rows
+	return true
 }
 
 type agent struct {
@@ -533,6 +549,8 @@ func (a *agent) openTerm(c *websocket.Conn, m protocol.Message, release func()) 
 		input:   make(chan []byte, termInputQueueDepth),
 		done:    make(chan struct{}),
 		release: release,
+		cols:    cols,
+		rows:    rows,
 	}
 	slotOwned = false
 	a.termMu.Lock()
@@ -600,7 +618,7 @@ func (a *agent) termResize(m protocol.Message) {
 	a.termMu.Lock()
 	t := a.terms[m.SessionID]
 	a.termMu.Unlock()
-	if t != nil && m.Cols > 0 && m.Rows > 0 {
+	if t != nil && t.claimResize(m.Cols, m.Rows) {
 		_ = pty.Setsize(t.f, &pty.Winsize{Cols: m.Cols, Rows: m.Rows})
 	}
 }

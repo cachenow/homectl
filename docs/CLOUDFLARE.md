@@ -2,6 +2,8 @@
 
 Cloudflare Tunnel 是可选入口。HomeCTL 本身不依赖 Cloudflare；你也可以使用 Caddy、Nginx、VPN 或仅局域网访问。
 
+Compose 示例使用官方 `cloudflare/cloudflared:latest`，执行 `docker compose pull` 时获取当前稳定镜像；`--no-autoupdate` 只禁止容器在运行中自行替换，不影响由 Compose 统一更新。
+
 ## Remotely-managed Tunnel
 
 在 Cloudflare Dashboard 创建 Tunnel 后会得到一个 Tunnel Token。HomeCTL 不需要保存 Cloudflare 账号 API Token。
@@ -10,7 +12,7 @@ Cloudflare Tunnel 是可选入口。HomeCTL 本身不依赖 Cloudflare；你也�
 
 ```yaml
 cloudflared:
-  image: cloudflare/cloudflared:2026.8.3@sha256:51c9cefcb4569df44e1ad403ab1d3d8065aa8e84339bcfc6aee75502e1140339
+  image: cloudflare/cloudflared:latest
   restart: unless-stopped
   depends_on:
     - homectl
@@ -35,7 +37,7 @@ http://localhost:8080
 
 ```yaml
 cloudflared:
-  image: cloudflare/cloudflared:2026.8.3@sha256:51c9cefcb4569df44e1ad403ab1d3d8065aa8e84339bcfc6aee75502e1140339
+  image: cloudflare/cloudflared:latest
   restart: unless-stopped
   network_mode: host
   command:

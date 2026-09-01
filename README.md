@@ -1,7 +1,5 @@
 # HomeCTL
 
-<img width="1311" height="655" alt="screenshot" src="https://github.com/user-attachments/assets/b6ce86b9-a7f1-41b0-8c2f-3c7958e550b2" />
-
 HomeCTL 是一个面向家庭网络、实验室和小型私有环境的轻量 Linux 远程管理面板。它由一个 Go Server 和每台受控 Linux 主机上的 Go Agent 组成。
 
 Agent **主动**建立到 Server 的 WSS 长连接，因此家庭宽带没有公网 IP、Agent 主机无法开放入站端口时也可以使用。状态上报、命令、终端和按需文件操作复用同一条连接。
@@ -14,7 +12,7 @@ Agent **主动**建立到 Server 的 WSS 长连接，因此家庭宽带没有公
 - 心跳超时离线判定
 - Web 命令执行、退出码、stdout/stderr 和结果自动收起
 - 重启 / 关机
-- xterm.js + PTY Web Terminal，支持拖动、缩放、最大化和自动适配行列数
+- 本地内嵌 xterm.js + FitAddon 的 PTY Web Terminal，不依赖外部 CDN，支持拖动、缩放、最大化和自动适配行列数
 - 设备自定义名称、删除、一次性 Enrollment Token
 - 暗色 / 亮色 / 跟随系统主题
 - 用户名 + 密码认证，可选 TOTP 两步验证

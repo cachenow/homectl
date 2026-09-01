@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -82,5 +85,46 @@ func TestDeploymentConfigExampleLoads(t *testing.T) {
 	path := filepath.Join("..", "..", "deploy", "agent", "config.example.json")
 	if _, err := loadAgentConfig(path); err != nil {
 		t.Fatalf("load %s: %v", path, err)
+	}
+	requireCompleteAgentJSONConfig(t, path, reflect.TypeOf(agentConfig{}))
+}
+
+func requireCompleteAgentJSONConfig(t *testing.T, path string, configType reflect.Type) {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var values map[string]json.RawMessage
+	if err := json.Unmarshal(b, &values); err != nil {
+		t.Fatal(err)
+	}
+	requireAgentJSONFields(t, path, values, configType)
+}
+
+func requireAgentJSONFields(t *testing.T, path string, values map[string]json.RawMessage, configType reflect.Type) {
+	t.Helper()
+	for i := 0; i < configType.NumField(); i++ {
+		field := configType.Field(i)
+		if field.PkgPath != "" {
+			continue
+		}
+		name := strings.Split(field.Tag.Get("json"), ",")[0]
+		if name == "" || name == "-" {
+			continue
+		}
+		raw, ok := values[name]
+		if !ok {
+			t.Errorf("%s is missing configurable field %q", path, name)
+			continue
+		}
+		if field.Type.Kind() == reflect.Struct {
+			var nested map[string]json.RawMessage
+			if err := json.Unmarshal(raw, &nested); err != nil {
+				t.Errorf("%s field %q is not an object: %v", path, name, err)
+				continue
+			}
+			requireAgentJSONFields(t, path+"."+name, nested, field.Type)
+		}
 	}
 }

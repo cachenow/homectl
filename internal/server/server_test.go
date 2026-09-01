@@ -60,6 +60,51 @@ func TestHeartbeatQueueKeepsLatestUpdate(t *testing.T) {
 	}
 }
 
+func TestTerminalDimensionsAreBounded(t *testing.T) {
+	for _, size := range [][2]uint16{{8, 8}, {100, 30}, {1000, 1000}} {
+		if !validTerminalSize(size[0], size[1]) {
+			t.Fatalf("valid terminal dimensions %dx%d were rejected", size[0], size[1])
+		}
+	}
+	for _, size := range [][2]uint16{{0, 30}, {7, 30}, {100, 7}, {1001, 30}, {100, 1001}} {
+		if validTerminalSize(size[0], size[1]) {
+			t.Fatalf("invalid terminal dimensions %dx%d were accepted", size[0], size[1])
+		}
+	}
+	if got := parseTerminalDimension("120", 100); got != 120 {
+		t.Fatalf("parsed terminal dimension=%d, want 120", got)
+	}
+	for _, raw := range []string{"", "0", "7", "1001", "invalid"} {
+		if got := parseTerminalDimension(raw, 100); got != 100 {
+			t.Fatalf("parseTerminalDimension(%q)=%d, want fallback 100", raw, got)
+		}
+	}
+}
+
+func TestSecurityHeadersUseLocalCacheableTerminalAssets(t *testing.T) {
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/vendor/xterm/xterm-6.0.0.mjs", nil)
+	securityHeaders(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})).ServeHTTP(rr, req)
+
+	csp := rr.Header().Get("Content-Security-Policy")
+	if csp == "" {
+		t.Fatal("Content-Security-Policy header is missing")
+	}
+	if strings.Contains(csp, "cdn.jsdelivr.net") || strings.Contains(csp, "https://") {
+		t.Fatalf("CSP still permits an external script or style source: %q", csp)
+	}
+	for _, directive := range []string{"script-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline'"} {
+		if !strings.Contains(csp, directive) {
+			t.Fatalf("CSP missing %q: %q", directive, csp)
+		}
+	}
+	if cacheControl := rr.Header().Get("Cache-Control"); cacheControl != "public, max-age=31536000, immutable" {
+		t.Fatalf("local Terminal asset Cache-Control=%q", cacheControl)
+	}
+}
+
 func TestShutdownClosesLongLivedConnectionsAndPendingRequests(t *testing.T) {
 	agent := &AgentConn{done: make(chan struct{})}
 	term := newBrowserTerm(nil, "session", "device")

@@ -75,6 +75,50 @@ func TestEnrollmentTokenIsOneTime(t *testing.T) {
 	}
 }
 
+func TestEnrollmentLabelBecomesInitialDeviceName(t *testing.T) {
+	s, err := OpenStore(filepath.Join(t.TempDir(), "homectl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	if err := s.CreateEnrollmentToken("id1", "  HomeServer  ", "named-secret", time.Now().Add(time.Minute).Unix()); err != nil {
+		t.Fatal(err)
+	}
+	ok, err := s.EnrollDevice("named-secret", &DeviceRecord{ID: "device-1", Name: "homeserver", TokenHash: hashToken("device-secret")})
+	if err != nil || !ok {
+		t.Fatalf("enrollment failed: ok=%v err=%v", ok, err)
+	}
+	record, err := s.Get("device-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if record == nil || record.Name != "HomeServer" {
+		t.Fatalf("initial device name=%q, want HomeServer", record.Name)
+	}
+}
+
+func TestBlankEnrollmentLabelFallsBackToAgentName(t *testing.T) {
+	s, err := OpenStore(filepath.Join(t.TempDir(), "homectl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	if err := s.CreateEnrollmentToken("id1", "  ", "unnamed-secret", time.Now().Add(time.Minute).Unix()); err != nil {
+		t.Fatal(err)
+	}
+	ok, err := s.EnrollDevice("unnamed-secret", &DeviceRecord{ID: "device-1", Name: "AgentConfiguredName", TokenHash: hashToken("device-secret")})
+	if err != nil || !ok {
+		t.Fatalf("enrollment failed: ok=%v err=%v", ok, err)
+	}
+	record, err := s.Get("device-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if record == nil || record.Name != "AgentConfiguredName" {
+		t.Fatalf("initial device name=%q, want AgentConfiguredName", record.Name)
+	}
+}
+
 func TestLegacyAdminBlobSchemaMigratesToTextAndArgon2(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "homectl.db")
 	db, err := sql.Open("sqlite", path)

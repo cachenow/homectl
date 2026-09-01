@@ -11,7 +11,7 @@ services:
       - "127.0.0.1:8080:8080"
 
   cloudflared:
-    image: cloudflare/cloudflared:2026.8.3@sha256:51c9cefcb4569df44e1ad403ab1d3d8065aa8e84339bcfc6aee75502e1140339
+    image: cloudflare/cloudflared:latest
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true

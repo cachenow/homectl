@@ -35,6 +35,24 @@ func TestTermInputQueueIsBoundedAndStopIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestTerminalResizeRejectsDuplicatesAndInvalidDimensions(t *testing.T) {
+	term := &termSession{cols: 100, rows: 30}
+	if term.claimResize(100, 30) {
+		t.Fatal("duplicate terminal dimensions requested another PTY resize")
+	}
+	for _, size := range [][2]uint16{{0, 30}, {100, 7}, {1001, 30}, {100, 1001}} {
+		if term.claimResize(size[0], size[1]) {
+			t.Fatalf("invalid terminal dimensions %dx%d were accepted", size[0], size[1])
+		}
+	}
+	if !term.claimResize(120, 40) {
+		t.Fatal("new valid terminal dimensions were rejected")
+	}
+	if term.cols != 120 || term.rows != 40 {
+		t.Fatalf("terminal dimensions=%dx%d, want 120x40", term.cols, term.rows)
+	}
+}
+
 func TestOperationSlotAdmissionIsBounded(t *testing.T) {
 	slots := make(chan struct{}, 1)
 	if !acquireSlot(slots) {
