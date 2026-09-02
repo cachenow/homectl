@@ -323,6 +323,75 @@
       .seg-cell::before{width:min(2px,48%)}
     }
 
+
+    /* Header C: airy single panel + compact mobile operation panel */
+    .bar{
+      position:sticky;
+      top:16px;
+      z-index:40;
+      width:calc(100% - 48px);
+      max-width:1200px;
+      min-height:62px;
+      margin:20px auto 0;
+      padding:12px 14px 12px 17px;
+      border:1px solid var(--separator);
+      border-radius:18px;
+      background:var(--surface);
+      color:var(--text);
+      box-shadow:none;
+      backdrop-filter:none;
+      -webkit-backdrop-filter:none;
+    }
+    .brand h1{color:var(--text);font-size:20px;line-height:1.08;letter-spacing:-.022em;font-weight:650}
+    .brand .muted{margin-top:4px;color:var(--muted);font-size:11px;line-height:1.1}
+    .bar-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto;padding-left:10px;border-left:1px solid var(--separator)}
+    .bar-actions>.nav-action{
+      min-height:34px;height:34px;padding:0 11px;border:0;border-radius:999px;
+      color:var(--text);background:transparent;box-shadow:none;font-size:12px;font-weight:550;white-space:nowrap
+    }
+    .bar-actions>.nav-action:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+    .bar .theme-switch{border-color:var(--separator);background:color-mix(in srgb,var(--text) 4%,transparent)}
+    .bar .theme-switch button{color:var(--muted)}
+    .bar .theme-switch button:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+    .bar .theme-switch button.active{background:var(--surface-raised);color:var(--text);box-shadow:inset 0 0 0 1px var(--separator)}
+    #devices{padding-top:30px}
+
+    .mobile-panel-trigger{display:none;width:38px;height:34px;min-height:34px;padding:0;place-items:center;border:1px solid var(--separator);border-radius:12px;background:color-mix(in srgb,var(--text) 4%,transparent);color:var(--text);box-shadow:none}
+    .mobile-panel-trigger:hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
+    .mobile-panel-trigger svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .mobile-panel-trigger[aria-expanded="true"]{background:color-mix(in srgb,var(--text) 9%,transparent)}
+    .mobile-panel{
+      position:absolute;right:0;top:calc(100% + 8px);z-index:50;width:min(224px,calc(100vw - 32px));padding:6px;
+      border:1px solid var(--separator-strong);border-radius:16px;background:color-mix(in srgb,var(--surface-raised) 94%,transparent);
+      box-shadow:0 14px 40px color-mix(in srgb,#000 18%,transparent);backdrop-filter:saturate(150%) blur(20px);-webkit-backdrop-filter:saturate(150%) blur(20px);
+      opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-5px) scale(.985);transform-origin:top right;
+      transition:opacity .16s ease,transform .16s ease,visibility .16s ease
+    }
+    .mobile-panel.open{opacity:1;visibility:visible;pointer-events:auto;transform:none}
+    .mobile-panel-row{display:flex;width:100%;min-height:40px;align-items:center;justify-content:space-between;gap:10px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:var(--text);box-shadow:none;font-size:13px;font-weight:500;text-align:left}
+    .mobile-panel-row:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+    .mobile-panel-row.danger{color:var(--red);background:transparent}
+    .mobile-panel-row.danger:hover{background:var(--red-soft)}
+    .mobile-panel-separator{height:1px;margin:5px 6px;background:var(--separator)}
+    .mobile-theme-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 8px 8px 10px;color:var(--muted);font-size:12px}
+    .mobile-theme-switch{display:flex;gap:2px;padding:2px;border:1px solid var(--separator);border-radius:999px;background:color-mix(in srgb,var(--text) 4%,transparent)}
+    .mobile-theme-switch button{display:grid;width:28px;height:28px;min-height:28px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--muted);box-shadow:none}
+    .mobile-theme-switch button.active{background:var(--surface-raised);color:var(--text);box-shadow:inset 0 0 0 1px var(--separator)}
+    .mobile-theme-switch svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+
+    @media(max-width:700px){
+      .bar{top:10px;width:calc(100% - 24px);min-height:56px;margin-top:12px;padding:10px 11px 10px 13px;border-radius:16px;gap:8px}
+      .brand h1{font-size:18px}.brand .muted{display:none}
+      .bar-actions{border-left:0;padding-left:0}
+      .bar-actions>.theme-switch,.bar-actions>.nav-action{display:none}
+      .mobile-panel-trigger{display:grid}
+      #devices{padding-top:22px}
+    }
+    @media(max-width:419px){
+      .bar{width:calc(100% - 20px);top:8px;margin-top:10px}
+      .brand h1{font-size:18px}
+    }
+
   </style>
 </head>
 <body>
@@ -352,15 +421,28 @@
   <section id="app" class="hidden">
     <div class="bar">
       <div class="brand"><h1>HomeCTL</h1><span class="muted">设备控制台</span></div>
-      <div class="row">
+      <div class="bar-actions">
         <div class="theme-switch" aria-label="主题切换">
           <button id="themeDark" onclick="setTheme('dark')" title="暗色" aria-label="暗色"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.2A8.4 8.4 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z"/></svg></button>
           <button id="themeLight" onclick="setTheme('light')" title="亮色" aria-label="亮色"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg></button>
           <button id="themeSystem" onclick="setTheme('system')" title="跟随系统" aria-label="跟随系统"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
         </div>
-        <button onclick="openDeviceManager()">设备管理</button>
-        <button onclick="openAccount()">账户</button>
-        <button onclick="logout()">退出</button>
+        <button class="nav-action" onclick="openDeviceManager()">设备管理</button>
+        <button class="nav-action" onclick="openAccount()">账户</button>
+        <button class="nav-action" onclick="logout()">退出</button>
+        <button id="mobilePanelTrigger" class="mobile-panel-trigger" onclick="toggleMobilePanel(event)" title="打开操作面板" aria-label="打开操作面板" aria-expanded="false" aria-controls="mobilePanel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M15 5v14"/></svg></button>
+        <div id="mobilePanel" class="mobile-panel" role="menu">
+          <div class="mobile-theme-row"><span>外观</span><div class="mobile-theme-switch" aria-label="移动端主题切换">
+            <button id="mobileThemeDark" onclick="setTheme('dark');closeMobilePanel()" title="暗色" aria-label="暗色"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.2A8.4 8.4 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z"/></svg></button>
+            <button id="mobileThemeLight" onclick="setTheme('light');closeMobilePanel()" title="亮色" aria-label="亮色"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg></button>
+            <button id="mobileThemeSystem" onclick="setTheme('system');closeMobilePanel()" title="跟随系统" aria-label="跟随系统"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
+          </div></div>
+          <div class="mobile-panel-separator"></div>
+          <button class="mobile-panel-row" role="menuitem" onclick="closeMobilePanel();openDeviceManager()">设备管理</button>
+          <button class="mobile-panel-row" role="menuitem" onclick="closeMobilePanel();openAccount()">账户</button>
+          <div class="mobile-panel-separator"></div>
+          <button class="mobile-panel-row danger" role="menuitem" onclick="closeMobilePanel();logout()">退出</button>
+        </div>
       </div>
     </div>
     <div id="devices"></div>
@@ -423,9 +505,15 @@ function escapeHTML(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','
 function currentThemeMode(){return document.documentElement.dataset.theme||'system'}
 function resolvedTheme(){const mode=currentThemeMode();return mode==='system'?(themeMedia.matches?'dark':'light'):mode}
 function terminalTheme(){return resolvedTheme()==='light'?{background:'#ffffff',foreground:'#1d1d1f',cursor:'#0066cc',selectionBackground:'#0066cc2b'}:{background:'#000000',foreground:'#f5f5f7',cursor:'#2997ff',selectionBackground:'#2997ff42'}}
-function updateThemeButtons(){['dark','light','system'].forEach(mode=>{const button=$('#theme'+mode[0].toUpperCase()+mode.slice(1));const active=currentThemeMode()===mode;button?.classList.toggle('active',active);button?.setAttribute('aria-pressed',String(active))})}
+function updateThemeButtons(){['dark','light','system'].forEach(mode=>{const suffix=mode[0].toUpperCase()+mode.slice(1);const active=currentThemeMode()===mode;[$('#theme'+suffix),$('#mobileTheme'+suffix)].forEach(button=>{button?.classList.toggle('active',active);button?.setAttribute('aria-pressed',String(active))})})}
 window.setTheme=mode=>{if(!['dark','light','system'].includes(mode))return;document.documentElement.dataset.theme=mode;try{localStorage.setItem('homectl_theme',mode)}catch{}updateThemeButtons();if(term){term.options.theme=terminalTheme();requestAnimationFrame(fitTerminal)}}
 themeMedia.addEventListener?.('change',()=>{if(currentThemeMode()==='system'){if(term)term.options.theme=terminalTheme();requestAnimationFrame(()=>term&&fitTerminal())}});
+function closeMobilePanel(){const panel=$('#mobilePanel'),trigger=$('#mobilePanelTrigger');panel?.classList.remove('open');trigger?.setAttribute('aria-expanded','false')}
+window.closeMobilePanel=closeMobilePanel;
+window.toggleMobilePanel=e=>{e?.stopPropagation?.();const panel=$('#mobilePanel'),trigger=$('#mobilePanelTrigger');if(!panel||!trigger)return;const opening=!panel.classList.contains('open');panel.classList.toggle('open',opening);trigger.setAttribute('aria-expanded',String(opening))};
+document.addEventListener('click',e=>{const panel=$('#mobilePanel'),trigger=$('#mobilePanelTrigger');if(!panel?.classList.contains('open'))return;if(panel.contains(e.target)||trigger?.contains(e.target))return;closeMobilePanel()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobilePanel()});
+window.addEventListener('resize',()=>{if(window.innerWidth>700)closeMobilePanel()});
 function humanBytesIEC(n){if(n===0)return '0 B';if(!n)return '-';const u=['B','KiB','MiB','GiB','TiB'];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++}return n.toFixed(i?1:0)+' '+u[i]}
 function humanBytesSI(n){if(n===0)return '0 B';if(!n)return '-';const u=['B','kB','MB','GB','TB'];let i=0;while(n>=1000&&i<u.length-1){n/=1000;i++}return n.toFixed(i?1:0)+' '+u[i]}
 function humanUptime(s){s=Number(s);if(!Number.isFinite(s)||s<0)return '采集中';if(s<60)return '少于 1 分钟';const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);if(d)return `${d} 天${h?` ${h} 小时`:''}`;if(h)return `${h} 小时${m?` ${m} 分钟`:''}`;return `${m} 分钟`}
@@ -443,6 +531,7 @@ function clearAccountSecrets(){
   const secret=$('#totpSecret'),uri=$('#totpURI'),setup=$('#totpSetup');if(secret)secret.textContent='';if(uri)uri.textContent='';if(setup)setup.classList.add('hidden');
 }
 function closeAllOverlays(){
+  closeMobilePanel();
   document.querySelectorAll('.modal').forEach(el=>el.classList.add('hidden'));
   if(term||termWS){try{window.closeTerminal?.()}catch{}}
   fileDeviceID='';
