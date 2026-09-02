@@ -329,7 +329,8 @@
       position:sticky;
       top:16px;
       z-index:40;
-      width:calc(100% - 48px);
+      width:100%;
+      /* Match the outer width of #devices itself. */
       max-width:1200px;
       min-height:62px;
       margin:20px auto 0;
@@ -465,7 +466,7 @@
   <div class="section">
     <div class="manage-toolbar"><div><h3>设备</h3><div class="muted">修改控制台显示名、添加或删除设备。</div></div><button class="primary" onclick="toggleEnrollPanel()">添加设备</button></div>
     <div id="enrollPanel" class="manage-enroll hidden">
-      <div class="field"><label>自定义设备名（可选）</label><input id="enrollLabel" maxlength="128" placeholder="例如：HomeServer"></div>
+      <div class="field"><label>首次显示名称（可选）</label><input id="enrollLabel" maxlength="128" placeholder="例如：HomeServer"></div>
       <div class="muted">填写后将作为设备首次上线时的控制台名称，并保留大小写；留空则使用 Agent 配置中的名称或主机名。</div>
       <button class="primary" onclick="createEnrollToken()">生成一次性 Agent Token</button>
       <div id="enrollResult" class="hidden"><p class="muted">Token 只显示这一次；首次注册成功即作废。</p><div id="enrollToken" class="code"></div><p id="enrollExpiry" class="muted"></p></div>
