@@ -106,20 +106,21 @@
     #app{min-height:100vh;background:var(--bg)}
     #devices{max-width:1200px;margin:0 auto;padding:48px 24px 80px}
 
-    .global-nav{position:sticky;top:0;z-index:40;height:44px;background:#000;color:#fff}
-    .global-nav-inner{height:44px;max-width:1200px;margin:auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-    .global-wordmark{font:600 14px/1 "SF Pro Text",system-ui,-apple-system,sans-serif;letter-spacing:-.01em}
-    .global-nav-meta{font:400 12px/1 "SF Pro Text",system-ui,-apple-system,sans-serif;letter-spacing:-.01em;color:#bdbdc2}
-
     .bar{
-      position:sticky;top:44px;z-index:35;min-height:52px;margin:0;padding:7px max(24px,calc((100vw - 1200px)/2 + 24px));
-      border:0;border-bottom:1px solid var(--separator);border-radius:0;
-      background:color-mix(in srgb,var(--bg) 82%,transparent);box-shadow:none;
-      backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px)
+      position:sticky;top:0;z-index:40;min-height:52px;margin:0;padding:7px max(24px,calc((100vw - 1200px)/2 + 24px));
+      border:0;border-radius:0;background:#000;color:#f5f5f7;box-shadow:none;
+      backdrop-filter:none;-webkit-backdrop-filter:none
     }
-    .brand h1{font-family:"SF Pro Display",system-ui,-apple-system,sans-serif;font-size:21px;font-weight:600;line-height:1.19;letter-spacing:.011em}
-    .brand .muted{margin-top:1px;font-size:12px;line-height:1;color:var(--muted);letter-spacing:-.01em}
-    .row{gap:8px}
+    .brand h1{font-family:"SF Pro Display",system-ui,-apple-system,sans-serif;font-size:21px;font-weight:600;line-height:1.19;letter-spacing:.011em;color:#f5f5f7}
+    .brand .muted{margin-top:1px;font-size:12px;line-height:1;color:#a1a1a6;letter-spacing:-.01em}
+    .bar .row{gap:8px}
+    .bar> .row>button{color:#f5f5f7;background:transparent;box-shadow:none}
+    .bar> .row>button:hover{background:#ffffff14}
+    .bar> .row>button:focus-visible{outline-color:#2997ff}
+    .bar .theme-switch{border-color:#ffffff24;background:#1d1d1f}
+    .bar .theme-switch button{color:#a1a1a6}
+    .bar .theme-switch button:hover{background:#ffffff10}
+    .bar .theme-switch button.active{background:#3a3a3c;color:#f5f5f7;box-shadow:none}
 
     button,input{font-family:"SF Pro Text",system-ui,-apple-system,sans-serif}
     button{
@@ -232,8 +233,7 @@
     }
     @media(max-width:700px){
       body{font-size:17px}
-      .global-nav-inner{padding:0 16px}.global-nav-meta{display:none}
-      .bar{top:44px;min-height:auto;align-items:center;padding:10px 16px;gap:12px}
+      .bar{top:0;min-height:auto;align-items:center;padding:10px 16px;gap:12px}
       .bar .row{justify-content:flex-end}
       .brand h1{font-size:21px}.brand .muted{display:none}
       #devices{padding:28px 12px 56px}
@@ -251,12 +251,76 @@
       .file-toolbar input[type=text]{min-width:180px}
     }
     @media(max-width:419px){
-      .global-nav{height:44px}.bar{top:44px}
+      .bar{top:0}
       .brand h1{font-size:19px}
       .device-title h3{font-size:21px}
       .metric-value{font-size:24px}
       .details{grid-template-columns:1fr}
       .theme-switch{display:none}
+    }
+
+  
+
+    /* HomeCTL option A: rounded typography + dense vertical-cell progress bars */
+    :root{
+      --font-ui-rounded:ui-rounded,"SF Pro Rounded","MiSans VF","MiSans","HarmonyOS Sans SC","OPPO Sans","vivo Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",system-ui,-apple-system,sans-serif;
+      --meter-safe:#34c759;
+      --meter-warn:#ff9f0a;
+      --meter-danger:#ff453a;
+      --meter-idle:var(--accent);
+      --meter-off:color-mix(in srgb,var(--text) 11%,transparent)
+    }
+    body,button,input{font-family:var(--font-ui-rounded)}
+    .brand h1,.login-card h1,.device-title h3,.metric-value,.modal-head h2,.section h3{font-family:var(--font-ui-rounded)}
+    .device-title h3,.metric-value,.modal-head h2{letter-spacing:-.025em}
+
+    /* Keep the metric card footprint unchanged: the new meter uses roughly the
+       same vertical budget as the previous 6px bar + surrounding margins. */
+    .metric-sub{margin-top:7px}
+    .progress{display:none!important}
+    .metric{min-width:0;overflow:hidden}
+    .seg-progress{
+      display:grid;
+      grid-template-columns:repeat(50,minmax(0,1fr));
+      align-items:stretch;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      height:16px;
+      margin-top:8px;
+      overflow:hidden;
+    }
+    .seg-cell{
+      position:relative;
+      min-width:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+    }
+    .seg-cell::before{
+      content:"";
+      position:absolute;
+      top:0;
+      bottom:0;
+      left:50%;
+      width:min(3px,58%);
+      max-width:100%;
+      transform:translateX(-50%);
+      border-radius:999px;
+      background:var(--meter-off);
+      transition:background-color .24s ease,opacity .24s ease,transform .24s ease;
+    }
+    .seg-progress.tone-safe .seg-cell.filled::before{background:var(--meter-safe)}
+    .seg-progress.tone-warn .seg-cell.filled::before{background:var(--meter-warn)}
+    .seg-progress.tone-danger .seg-cell.filled::before{background:var(--meter-danger)}
+    .seg-progress.tone-idle .seg-cell.filled::before{background:var(--meter-idle)}
+    @media(max-width:700px){
+      .seg-progress{height:14px}
+      .seg-cell::before{width:min(2.5px,54%)}
+    }
+    @media(max-width:419px){
+      .seg-progress{height:13px}
+      .seg-cell::before{width:min(2px,48%)}
     }
 
   </style>
@@ -286,9 +350,6 @@
   </section>
 
   <section id="app" class="hidden">
-    <div class="global-nav" aria-label="全局导航">
-      <div class="global-nav-inner"><span class="global-wordmark">HomeCTL</span><span class="global-nav-meta">Private Linux control</span></div>
-    </div>
     <div class="bar">
       <div class="brand"><h1>HomeCTL</h1><span class="muted">设备控制台</span></div>
       <div class="row">
@@ -372,7 +433,9 @@ function humanAgo(ts){if(!ts)return '从未';const sec=Math.max(0,Math.floor(Dat
 function fmtDate(ts){return ts?new Date(ts*1000).toLocaleString():'-'}
 function clampPct(n){n=Number(n);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0}
 function pctText(n){return Number.isFinite(Number(n))&&Number(n)>=0?`${Number(n).toFixed(1)}%`:'采集中'}
-function progressHTML(cls,label,pct,sub,sub2=''){const p=clampPct(pct);return `<div class="metric ${cls}"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-value">${pctText(pct)}</span></div><div class="progress"><i style="--pct:${p}%"></i></div><div class="metric-sub">${escapeHTML(sub)}</div>${sub2?`<div class="metric-sub secondary">${escapeHTML(sub2)}</div>`:''}</div>`}
+function progressToneClass(pct){const n=Number(pct);if(!Number.isFinite(n)||n<0)return 'idle';if(n>=80)return 'danger';if(n>=50)return 'warn';return 'safe'}
+function segmentedProgressHTML(pct,segments=50){const n=Number(pct);const valid=Number.isFinite(n)&&n>=0;const filled=valid?Math.round(clampPct(n)/100*segments):0;const tone=progressToneClass(pct);return `<div class="seg-progress tone-${tone}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${valid?clampPct(n).toFixed(1):0}" aria-label="${valid?pctText(n):'采集中'}">${Array.from({length:segments},(_,i)=>`<span class="seg-cell ${i<filled?'filled':''}"></span>`).join('')}</div>`}
+function progressHTML(cls,label,pct,sub,sub2=''){return `<div class="metric ${cls}"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-value">${pctText(pct)}</span></div>${segmentedProgressHTML(pct)}<div class="metric-sub">${escapeHTML(sub)}</div>${sub2?`<div class="metric-sub secondary">${escapeHTML(sub2)}</div>`:''}</div>`}
 function detailHTML(label,value,size='half'){return `<div class="detail ${size}"><div class="detail-label">${label}</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div></div>`}
 function closeModal(id){$('#'+id).classList.add('hidden');if(id==='accountModal')clearAccountSecrets()}
 function clearAccountSecrets(){
