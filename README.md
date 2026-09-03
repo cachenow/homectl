@@ -1,6 +1,6 @@
 # HomeCTL
 
-<img width="1194" height="1046" alt="demo09" src="https://github.com/user-attachments/assets/9f6ae757-5846-46d5-b94d-4124bf6a78ca" />
+<img width="1177" height="1032" alt="demo03" src="https://github.com/user-attachments/assets/479ee012-b6f6-4105-94d7-d9a41b08bd29" />
 
 HomeCTL 是一个面向家庭网络、实验室和小型私有环境的轻量 Linux 远程管理面板。它由一个 Go Server 和每台受控 Linux 主机上的 Go Agent 组成。
 
