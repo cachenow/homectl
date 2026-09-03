@@ -977,8 +977,8 @@ function renderCollapsedMetricSummary(key,d,info){
   }
   if(key==='network'){
     const rx=Number(live.net_rx_bps)||0,tx=Number(live.net_tx_bps)||0,rxPeak=Number(live.net_rx_peak_5m_bps)||0,txPeak=Number(live.net_tx_peak_5m_bps)||0,link=Number(live.net_link_bps)||0;
-    const scale=networkScale(rx,tx,rxPeak,txPeak,link);
-    return `<div class="device-summary-slot"><div class="device-summary-label">网络吞吐</div><div class="device-summary-network"><div class="device-summary-network-item"><div class="device-summary-network-head"><span>↓ 下载</span><b>${humanRate(rx)}</b></div>${networkProgressHTML(throughputPct(rx,scale.bytesPerSecond),'down')}</div><div class="device-summary-network-item"><div class="device-summary-network-head"><span>↑ 上传</span><b>${humanRate(tx)}</b></div>${networkProgressHTML(throughputPct(tx,scale.bytesPerSecond),'up')}</div></div><div class="device-summary-sub">${escapeHTML(scale.label)}</div></div>`;
+    const scale=networkScale(rx,tx,rxPeak,txPeak,link),primary=Math.max(rx,tx);
+    return `<div class="device-summary-slot"><div class="device-summary-label">网络吞吐</div><div class="device-summary-value">${humanRate(primary)}</div><div class="device-summary-network"><div class="device-summary-network-item"><div class="device-summary-network-head"><span>↓ 下载</span><b>${humanRate(rx)}</b></div>${networkProgressHTML(throughputPct(rx,scale.bytesPerSecond),'down')}</div><div class="device-summary-network-item"><div class="device-summary-network-head"><span>↑ 上传</span><b>${humanRate(tx)}</b></div>${networkProgressHTML(throughputPct(tx,scale.bytesPerSecond),'up')}</div></div></div>`;
   }
   if(key==='processes'){
     const total=Number(live.process_total)||0,running=Number(live.process_running)||0,sleeping=Number(live.process_sleeping)||0,zombie=Number(live.process_zombie)||0;
