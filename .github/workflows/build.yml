@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, e.g. v2.0.5"
+        description: "Release version, e.g. v2.0.6"
         required: true
-        default: "v2.0.5"
+        default: "v2.0.6"
 
 permissions: {}
 
@@ -33,7 +33,7 @@ jobs:
         run: |
           VERSION="$VERSION_INPUT"
           if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
-            echo "version must look like v2.0.5 or v2.0.5-rc.1" >&2
+            echo "version must look like v2.0.6 or v2.0.6-rc.1" >&2
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
