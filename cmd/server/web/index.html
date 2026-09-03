@@ -351,6 +351,7 @@
       color:var(--text);background:transparent;box-shadow:none;font-size:12px;font-weight:550;white-space:nowrap
     }
     .bar-actions>.nav-action:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+    .bar-actions>.nav-action.active{background:var(--surface-soft);color:var(--link)}
     .bar .theme-switch{border-color:var(--separator);background:color-mix(in srgb,var(--text) 4%,transparent)}
     .bar .theme-switch button{color:var(--muted)}
     .bar .theme-switch button:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
@@ -464,6 +465,96 @@
       .metric-policy-panel{padding:18px}
     }
 
+  
+
+    /* v2.1 Apple-style modal workflows + clean network rail */
+    :root{
+      --network-track:color-mix(in srgb,var(--text) 7%,var(--surface-soft));
+      --network-track-edge:color-mix(in srgb,var(--text) 5%,transparent);
+      --network-down:var(--accent);
+      --network-up:var(--green)
+    }
+    body.modal-open{overflow:hidden}
+
+    /* Network: one calm continuous rail when idle; vertical ticks appear only for active throughput. */
+    .seg-progress.network-meter{
+      grid-template-columns:repeat(50,minmax(0,1fr));height:9px;margin-top:7px;padding:2px 3px;
+      border:1px solid var(--network-track-edge);border-radius:999px;background:var(--network-track);overflow:hidden
+    }
+    .seg-progress.network-meter .seg-cell::before{top:0;bottom:0;width:min(2px,48%);min-width:0;background:transparent;opacity:0}
+    .seg-progress.network-meter .seg-cell.filled::before{opacity:1}
+    .seg-progress.network-meter.network-down .seg-cell.filled::before{background:var(--network-down)}
+    .seg-progress.network-meter.network-up .seg-cell.filled::before{background:var(--network-up)}
+    .flow-head .down,.flow-head .up{display:inline-flex;align-items:center;gap:5px;color:var(--muted)}
+    .flow-head .down::before,.flow-head .up::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+    .flow-head .down::before{color:var(--network-down);background:var(--network-down)}
+    .flow-head .up::before{color:var(--network-up);background:var(--network-up)}
+    .flow-peak{margin-top:4px}
+
+    /* Modal shells keep their footprint stable; only the content viewport scrolls. */
+    .modal{z-index:70;padding:32px 24px;overflow:hidden}
+    .modal>.modal-box{
+      position:relative;display:flex;flex-direction:column;width:min(720px,calc(100vw - 48px));
+      height:min(680px,calc(100dvh - 64px));max-height:none;overflow:hidden;padding:0;border-radius:22px;
+      background:var(--surface);border:1px solid var(--separator-strong);box-shadow:0 20px 60px color-mix(in srgb,#000 14%,transparent)
+    }
+    .modal>.modal-box.modal-wide{width:min(1100px,calc(100vw - 48px));height:min(740px,calc(100dvh - 64px))}
+    .modal-head{flex:0 0 auto;margin:0;padding:21px 24px 17px;border-bottom:1px solid var(--separator);background:var(--surface)}
+    .modal-head h2{font-size:28px;line-height:1.15}
+    .modal-head>button{min-height:32px;padding:6px 12px;font-size:13px}
+    .modal-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 24px 24px;scrollbar-width:none}
+    .modal-body::-webkit-scrollbar,.table-wrap::-webkit-scrollbar,.file-table-scroll::-webkit-scrollbar{display:none}
+    .table-wrap,.file-table-scroll{scrollbar-width:none}
+    .section{padding:20px 0}
+    .section h3{font-size:20px}
+    .modal-view,.modal-subview{min-width:0}
+    .modal-subview{padding-top:20px}
+    .subview-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .subview-head-copy{min-width:0;flex:1}
+    .subview-head h3{margin:0;font-size:22px;line-height:1.2;letter-spacing:-.02em}
+    .subview-head p{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+    .subview-back{display:grid;width:36px;height:36px;min-height:36px;flex:0 0 auto;padding:0;place-items:center;border:1px solid var(--separator);border-radius:50%;background:var(--surface-soft);color:var(--text);box-shadow:none}
+    .subview-back:hover{background:color-mix(in srgb,var(--text) 8%,var(--surface-soft))}
+    .subview-back svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+    /* Apple-like informational surfaces: quiet, compact, and consistent across workflows. */
+    .hint-card{display:flex;align-items:flex-start;gap:10px;margin:0 0 16px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--accent) 18%,var(--separator));border-radius:14px;background:color-mix(in srgb,var(--accent) 6%,var(--surface));color:var(--muted);font-size:13px;line-height:1.5}
+    .hint-card::before{content:"i";display:grid;width:20px;height:20px;flex:0 0 auto;margin-top:1px;place-items:center;border-radius:50%;background:var(--accent-soft);color:var(--link);font-size:12px;font-weight:700}
+    .setting-summary{margin:0 0 12px;padding:10px 12px;border:1px solid var(--separator);border-radius:12px;background:var(--surface-soft);color:var(--muted);font-size:13px}
+    .inline-message{display:none;margin:12px 0 0;padding:10px 12px;border:1px solid var(--separator);border-radius:12px;background:var(--surface-soft);color:var(--muted);font-size:12px;line-height:1.45}
+    .inline-message:not(:empty){display:block}
+    .inline-message.error{border-color:color-mix(in srgb,var(--red) 34%,var(--separator));background:var(--red-soft);color:var(--red)}
+    .inline-message.success{border-color:color-mix(in srgb,var(--green) 28%,var(--separator));background:var(--green-soft);color:var(--green)}
+    .subview-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}
+
+    .secure-result{margin-top:18px;padding:16px;border:1px solid var(--separator);border-radius:16px;background:var(--canvas)}
+    .secure-result-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .secure-result-head strong{font-size:14px;font-weight:600}
+    .secure-badge{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--link);font-size:11px;font-weight:600}
+    .code-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+    .code-row .code{min-width:0;margin:0;display:flex;align-items:center;overflow-wrap:anywhere}
+    .copy-code{min-height:42px;padding:8px 12px;border-radius:10px;color:var(--link);background:transparent;box-shadow:inset 0 0 0 1px var(--accent)}
+    .secure-meta{margin:9px 1px 0;color:var(--subtle);font-size:11px;line-height:1.4}
+
+    .manage-enroll{margin:0;padding:0;border:0;background:transparent}
+    .metric-policy-panel{margin:0;padding:0;border:0;background:transparent}
+    .manager-footnote{margin-top:12px}
+    .table-wrap{max-width:100%;overflow:auto}
+    .file-modal-body{display:flex;min-height:0;flex-direction:column;padding-top:18px}
+    .file-table-scroll{flex:1;min-height:0;overflow:auto;border:1px solid var(--hairline);border-radius:16px;background:var(--canvas)}
+    .file-table{min-width:680px}
+
+    @media(max-width:700px){
+      .modal{padding:10px}
+      .modal>.modal-box,.modal>.modal-box.modal-wide{width:100%;height:calc(100dvh - 20px);max-height:none;border-radius:20px}
+      .modal-head{padding:17px 18px 14px}.modal-head h2{font-size:24px}
+      .modal-body{padding:0 18px 18px}.modal-subview{padding-top:16px}
+      .subview-head h3{font-size:20px}.hint-card{font-size:12px}
+      .code-row{grid-template-columns:1fr}.copy-code{min-height:36px}
+      .seg-progress.network-meter{height:8px;padding-inline:2px}
+      .seg-progress.network-meter .seg-cell::before{width:min(1.8px,44%)}
+    }
+
   </style>
 </head>
 <body>
@@ -499,8 +590,8 @@
           <button id="themeLight" onclick="setTheme('light')" title="亮色" aria-label="亮色"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg></button>
           <button id="themeSystem" onclick="setTheme('system')" title="跟随系统" aria-label="跟随系统"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
         </div>
-        <button class="nav-action" onclick="openDeviceManager()">设备管理</button>
-        <button class="nav-action" onclick="openAccount()">账户</button>
+        <button id="navDeviceManager" class="nav-action" onclick="openDeviceManager()">设备管理</button>
+        <button id="navAccount" class="nav-action" onclick="openAccount()">账户</button>
         <button class="nav-action" onclick="logout()">退出</button>
         <button id="mobilePanelTrigger" class="mobile-panel-trigger" onclick="toggleMobilePanel(event)" title="打开操作面板" aria-label="打开操作面板" aria-expanded="false" aria-controls="mobilePanel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M15 5v14"/></svg></button>
         <div id="mobilePanel" class="mobile-panel" role="menu">
@@ -523,33 +614,43 @@
 
 <div id="accountModal" class="modal hidden"><div class="modal-box">
   <div class="modal-head"><h2>账户设置</h2><button onclick="closeModal('accountModal')">关闭</button></div>
-  <div class="section"><h3>用户名</h3><div class="field"><label>新用户名</label><input id="accountUsername"></div><div class="field"><label>当前密码</label><input id="accountUsernamePassword" type="password"></div><button onclick="changeUsername()">修改用户名</button></div>
-  <div class="section"><h3>修改密码</h3><div class="field"><label>当前密码</label><input id="currentPassword" type="password"></div><div class="field"><label>新密码（至少 16 个字符，不强制特殊字符）</label><input id="newPassword" type="password" autocomplete="new-password"></div><button onclick="changePassword()">修改密码</button></div>
-  <div class="section"><h3>两步验证（TOTP）</h3><div id="totpStatus" class="muted"></div><div class="field"><label>当前密码</label><input id="totpPassword" type="password"></div><button id="totpSetupBtn" onclick="setupTOTP()">配置两步验证</button><button id="totpDisableBtn" class="danger hidden" onclick="disableTOTP()">关闭两步验证</button>
-    <div id="totpSetup" class="hidden"><div class="notice">在 Google Authenticator、Microsoft Authenticator、1Password 等 TOTP 应用中添加下面的密钥，然后输入生成的 6 位验证码确认。</div><div class="field"><label>Secret</label><div id="totpSecret" class="code"></div></div><div class="field"><label>otpauth URI</label><div id="totpURI" class="code"></div></div><div class="field"><label>6 位验证码</label><input id="totpEnableCode" inputmode="numeric" maxlength="6"></div><button class="primary" onclick="enableTOTP()">验证并启用</button></div>
-    <div id="totpDisableCodeWrap" class="hidden"><div class="field"><label>当前 6 位验证码</label><input id="totpDisableCode" inputmode="numeric" maxlength="6"></div></div>
+  <div class="modal-body">
+    <div id="accountMainView" class="modal-view">
+      <div class="section"><h3>用户名</h3><div class="field"><label>新用户名</label><input id="accountUsername"></div><div class="field"><label>当前密码</label><input id="accountUsernamePassword" type="password"></div><button onclick="changeUsername()">修改用户名</button></div>
+      <div class="section"><h3>修改密码</h3><div class="field"><label>当前密码</label><input id="currentPassword" type="password"></div><div class="field"><label>新密码（至少 16 个字符，不强制特殊字符）</label><input id="newPassword" type="password" autocomplete="new-password"></div><button onclick="changePassword()">修改密码</button></div>
+      <div class="section"><h3>两步验证（TOTP）</h3><div id="totpStatus" class="setting-summary"></div><div class="field"><label>当前密码</label><input id="totpPassword" type="password"></div><button id="totpSetupBtn" onclick="setupTOTP()">配置两步验证</button><button id="totpDisableBtn" class="danger hidden" onclick="disableTOTP()">关闭两步验证</button><div id="totpDisableCodeWrap" class="hidden"><div class="field"><label>当前 6 位验证码</label><input id="totpDisableCode" inputmode="numeric" maxlength="6"></div></div></div>
+    </div>
+    <div id="totpSetup" class="modal-subview hidden">
+      <div class="subview-head"><button class="subview-back" onclick="backAccountMain()" title="返回账户设置" aria-label="返回账户设置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="subview-head-copy"><h3>配置两步验证</h3><p>完成认证器绑定后再启用，不会改变其他账户设置。</p></div></div>
+      <div class="hint-card">在 Google Authenticator、Microsoft Authenticator、1Password 等 TOTP 应用中添加下面的密钥，然后输入生成的 6 位验证码确认。</div>
+      <div class="field"><label>Secret</label><div class="code-row"><div id="totpSecret" class="code"></div><button class="copy-code" onclick="copyCodeValue('totpSecret',this)">复制</button></div></div>
+      <div class="field"><label>otpauth URI</label><div class="code-row"><div id="totpURI" class="code"></div><button class="copy-code" onclick="copyCodeValue('totpURI',this)">复制</button></div></div>
+      <div class="field"><label>再次输入当前密码</label><input id="totpEnablePassword" type="password" autocomplete="current-password"></div>
+      <div class="field"><label>6 位验证码</label><input id="totpEnableCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+      <div class="subview-actions"><button class="primary" onclick="enableTOTP()">验证并启用</button></div>
+    </div>
+    <div id="accountMsg" class="inline-message" role="status" aria-live="polite"></div>
   </div>
-  <div id="accountMsg" class="muted"></div>
 </div></div>
 
 <div id="deviceManagerModal" class="modal hidden"><div class="modal-box modal-wide">
   <div class="modal-head"><h2>设备管理</h2><button onclick="closeModal('deviceManagerModal')">关闭</button></div>
-  <div class="section">
-    <div class="manage-toolbar"><div><h3>设备</h3><div class="muted">修改名称不会改变顺序；按住 ⠿ 可调整设备位置。</div></div><button class="primary" onclick="toggleEnrollPanel()">添加设备</button></div>
-    <div id="enrollPanel" class="manage-enroll hidden">
-      <div class="field"><label>自定义设备名（可选）</label><input id="enrollLabel" maxlength="128" placeholder="例如：HomeServer"></div>
-      <div class="muted">填写后将作为设备首次上线时的控制台名称，并保留大小写；留空则使用 Agent 配置中的名称或主机名。</div>
-      <button class="primary" onclick="createEnrollToken()">生成一次性 Agent Token</button>
-      <div id="enrollResult" class="hidden"><p class="muted">Token 只显示这一次；首次注册成功即作废。</p><div id="enrollToken" class="code"></div><p id="enrollExpiry" class="muted"></p></div>
+  <div class="modal-body">
+    <div id="deviceManagerMainView" class="modal-view">
+      <div class="section"><div class="manage-toolbar"><div><h3>设备</h3><div class="muted">修改名称不会改变顺序；按住 ⠿ 可调整设备位置。</div></div><button class="primary" onclick="toggleEnrollPanel()">添加设备</button></div></div>
+      <div class="section"><div id="deviceManageMsg" class="inline-message" role="status" aria-live="polite"></div><div class="table-wrap"><table class="manage-table"><thead><tr><th aria-label="排序"></th><th>自定义设备名</th><th>状态</th><th>设备 ID</th><th>最后心跳</th><th>操作</th></tr></thead><tbody id="deviceManageRows"></tbody></table></div><div class="manager-footnote">⠿ 只用于拖动排序；“指标卡片”会进入独立设置视图。删除设备会吊销长期 Device Token 并立即断开连接。</div></div>
     </div>
-  </div>
-  <div class="section">
-    <div id="deviceManageMsg" class="muted" style="margin-bottom:8px"></div>
-    <div class="table-wrap"><table class="manage-table"><thead><tr><th aria-label="排序"></th><th>自定义设备名</th><th>状态</th><th>设备 ID</th><th>最后心跳</th><th>操作</th></tr></thead><tbody id="deviceManageRows"></tbody></table></div>
-    <div class="manager-footnote">⠿ 只用于拖动排序；点击设备行内的“指标卡片”切换要设置的设备。删除设备会吊销长期 Device Token 并立即断开连接。</div>
-    <section id="metricPolicyPanel" class="metric-policy-panel hidden" aria-labelledby="metricPolicyTitle">
+    <div id="enrollPanel" class="manage-enroll modal-subview hidden">
+      <div class="subview-head"><button class="subview-back" onclick="closeDeviceManagerSubview()" title="返回设备管理" aria-label="返回设备管理"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="subview-head-copy"><h3>添加设备</h3><p>生成一次性注册凭据，并在 Agent 首次连接时完成绑定。</p></div></div>
+      <div class="hint-card">自定义设备名仅用于首次显示；留空时使用 Agent 配置中的名称或主机名。一次性 Token 只用于首次注册。</div>
+      <div class="field"><label>自定义设备名（可选）</label><input id="enrollLabel" maxlength="128" placeholder="例如：HomeServer"></div>
+      <div class="subview-actions"><button class="primary" onclick="createEnrollToken()">生成一次性 Agent Token</button></div>
+      <div id="enrollMsg" class="inline-message" role="status" aria-live="polite"></div>
+      <div id="enrollResult" class="secure-result hidden"><div class="secure-result-head"><strong>Agent Token</strong><span class="secure-badge">仅显示一次</span></div><div class="code-row"><div id="enrollToken" class="code"></div><button class="copy-code" onclick="copyCodeValue('enrollToken',this)">复制</button></div><p id="enrollExpiry" class="secure-meta"></p><p class="secure-meta">首次注册成功后立即作废，请在离开此页面前保存。</p></div>
+    </div>
+    <section id="metricPolicyPanel" class="metric-policy-panel modal-subview hidden" aria-labelledby="metricPolicyTitle">
+      <div class="subview-head"><button class="subview-back" onclick="closeDeviceManagerSubview()" title="返回设备管理" aria-label="返回设备管理"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="subview-head-copy"><h3 id="metricPolicyTitle">指标卡片</h3><p>选择设备详情中显示并由 Agent 采集的卡片，至少保留 3 张。</p></div><span class="metric-policy-count"><b id="metricPolicyCount">6</b> / 6 已显示</span></div>
       <div class="metric-policy-target"><div class="metric-policy-target-main"><small>当前设备</small><strong id="metricPolicyDeviceName">-</strong><code id="metricPolicyDeviceID">-</code></div><span id="metricPolicyDeviceStatus" class="status-pill offline"><span class="status-dot"></span><span>离线</span></span></div>
-      <div class="metric-policy-head"><div><h3 id="metricPolicyTitle">指标卡片</h3><div class="metric-policy-head-copy">选择设备详情中显示并由 Agent 采集的卡片，至少保留 3 张。</div></div><span class="metric-policy-count"><b id="metricPolicyCount">6</b> / 6 已显示</span></div>
       <div id="metricPolicyOptions" class="metric-policy-options"></div>
       <div class="metric-policy-sync"><i></i><span id="metricPolicyStatus">设置按设备独立保存</span></div>
     </section>
@@ -558,9 +659,7 @@
 
 <div id="fileModal" class="modal hidden"><div class="modal-box modal-wide">
   <div class="modal-head"><h2 id="fileTitle">文件浏览器</h2><button onclick="closeFileBrowser()">关闭</button></div>
-  <div class="file-toolbar"><button onclick="fileUp()">上级</button><input id="filePath" type="text" value="/"><button onclick="loadFiles($('#filePath').value)">转到</button><button onclick="newFolder()">新建目录</button><button onclick="$('#fileUpload').click()">上传</button><input id="fileUpload" type="file" class="hidden" onchange="uploadSelectedFile(this)"></div>
-  <div id="fileMsg" class="muted"></div>
-  <div style="overflow:auto"><table class="file-table"><thead><tr><th>名称</th><th class="optional">大小</th><th class="optional">修改时间</th><th>操作</th></tr></thead><tbody id="fileRows"></tbody></table></div>
+  <div class="modal-body file-modal-body"><div class="file-toolbar"><button onclick="fileUp()">上级</button><input id="filePath" type="text" value="/"><button onclick="loadFiles($('#filePath').value)">转到</button><button onclick="newFolder()">新建目录</button><button onclick="$('#fileUpload').click()">上传</button><input id="fileUpload" type="file" class="hidden" onchange="uploadSelectedFile(this)"></div><div id="fileMsg" class="inline-message" role="status" aria-live="polite"></div><div class="file-table-scroll"><table class="file-table"><thead><tr><th>名称</th><th class="optional">大小</th><th class="optional">修改时间</th><th>操作</th></tr></thead><tbody id="fileRows"></tbody></table></div></div>
 </div></div>
 
 <div id="termModal" class="modal hidden"><div id="termBox" class="term-box"><div class="term-head"><strong id="termTitle">Terminal</strong><div class="term-head-actions"><button id="termSizeBtn" class="small" onclick="toggleTerminalMaximize()">最大化</button><button class="small" onclick="closeTerminal()">关闭</button></div></div><div id="terminal" class="terminal"></div></div></div>
@@ -605,6 +704,7 @@ function clampPct(n){n=Number(n);return Number.isFinite(n)?Math.max(0,Math.min(1
 function pctText(n){return Number.isFinite(Number(n))&&Number(n)>=0?`${Number(n).toFixed(1)}%`:'采集中'}
 function progressToneClass(pct){const n=Number(pct);if(!Number.isFinite(n)||n<0)return 'idle';if(n>=80)return 'danger';if(n>=50)return 'warn';return 'safe'}
 function segmentedProgressHTML(pct,segments=50,extraClass=''){const n=Number(pct);const valid=Number.isFinite(n)&&n>=0;const filled=valid?Math.round(clampPct(n)/100*segments):0;const tone=progressToneClass(pct);return `<div class="seg-progress tone-${tone} ${extraClass}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${valid?clampPct(n).toFixed(1):0}" aria-label="${valid?pctText(n):'采集中'}">${Array.from({length:segments},(_,i)=>`<span class="seg-cell ${i<filled?'filled':''}"></span>`).join('')}</div>`}
+function networkProgressHTML(pct,direction){const n=Number(pct);const valid=Number.isFinite(n)&&n>=0,segments=50,filled=valid?Math.round(clampPct(n)/100*segments):0;return `<div class="seg-progress network-meter network-${direction}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${valid?clampPct(n).toFixed(1):0}" aria-label="${direction==='down'?'下载':'上传'} ${valid?pctText(n):'采集中'}">${Array.from({length:segments},(_,i)=>`<span class="seg-cell ${i<filled?'filled':''}"></span>`).join('')}</div>`}
 function progressHTML(cls,label,pct,sub,sub2=''){return `<div class="metric ${cls}"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-value">${pctText(pct)}</span></div>${segmentedProgressHTML(pct)}<div class="metric-sub">${escapeHTML(sub)}</div>${sub2?`<div class="metric-sub secondary">${escapeHTML(sub2)}</div>`:''}</div>`}
 function detailHTML(label,value,size='half'){return `<div class="detail ${size}"><div class="detail-label">${label}</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div></div>`}
 function metricCardsFor(d){const cards=Array.isArray(d.metric_cards)?d.metric_cards.filter(key=>metricCardKeys.includes(key)):[];return cards.length>=3?cards:metricCardKeys}
@@ -629,7 +729,7 @@ function renderMetricCard(key,d,info){
   if(key==='network'){
     const rx=Number(live.net_rx_bps)||0,tx=Number(live.net_tx_bps)||0,rxPeak=Number(live.net_rx_peak_5m_bps)||0,txPeak=Number(live.net_tx_peak_5m_bps)||0,link=Number(live.net_link_bps)||0;
     const caption=d.online?(live.net_interface?escapeHTML(live.net_interface):'默认路由'):'已归零';
-    return `<div class="metric network" data-card-key="network"><div class="metric-top"><div class="metric-label">网络吞吐</div><span class="metric-caption">${caption}</span></div><div class="flow-lines"><div class="flow"><div class="flow-head"><span class="down">下载</span><b>${humanRate(rx)}</b></div>${segmentedProgressHTML(throughputPct(rx,link,rxPeak),50,'compact')}<div class="flow-peak">5 分钟峰值 ${humanRate(rxPeak)}</div></div><div class="flow"><div class="flow-head"><span class="up">上传</span><b>${humanRate(tx)}</b></div>${segmentedProgressHTML(throughputPct(tx,link,txPeak),50,'compact')}<div class="flow-peak">5 分钟峰值 ${humanRate(txPeak)}</div></div></div></div>`;
+    return `<div class="metric network" data-card-key="network"><div class="metric-top"><div class="metric-label">网络吞吐</div><span class="metric-caption">${caption}</span></div><div class="flow-lines"><div class="flow"><div class="flow-head"><span class="down">下载</span><b>${humanRate(rx)}</b></div>${networkProgressHTML(throughputPct(rx,link,rxPeak),'down')}<div class="flow-peak">5 分钟峰值 ${humanRate(rxPeak)}</div></div><div class="flow"><div class="flow-head"><span class="up">上传</span><b>${humanRate(tx)}</b></div>${networkProgressHTML(throughputPct(tx,link,txPeak),'up')}<div class="flow-peak">5 分钟峰值 ${humanRate(txPeak)}</div></div></div></div>`;
   }
   if(key==='processes'){
     const total=Number(live.process_total)||0,running=Number(live.process_running)||0,sleeping=Number(live.process_sleeping)||0,zombie=Number(live.process_zombie)||0;
@@ -639,18 +739,34 @@ function renderMetricCard(key,d,info){
   return `<div class="metric io" data-card-key="diskio"><div class="metric-top"><div><div class="metric-label">磁盘 I/O</div><div class="metric-value">${formatIOPS(iops)} IOPS</div></div></div><div class="io-grid"><span>读取<b>${humanRate(read)}</b></span><span>写入<b>${humanRate(write)}</b></span><span>I/O Wait<b>${wait.toFixed(1)}%</b></span><span>估算延迟<b>${latency.toFixed(1)} ms</b></span></div></div>`;
 }
 function ipDetailHTML(addresses,idx){const value=addresses.join(', ')||'-';return `<div class="detail third ip-detail"><div class="detail-label">IP 地址</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div><button class="copy-ip" onclick="copyDeviceIP(${idx},this)" title="复制 IP 地址" aria-label="复制 IP 地址" ${addresses.length?'':'disabled'}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button></div>`}
-function closeModal(id){$('#'+id).classList.add('hidden');if(id==='accountModal')clearAccountSecrets()}
+function syncModalOpenState(){const open=[...document.querySelectorAll('.modal')].filter(el=>!el.classList.contains('hidden'));document.body.classList.toggle('modal-open',open.length>0);const activeID=open.at(-1)?.id||'';[['navDeviceManager','deviceManagerModal'],['navAccount','accountModal']].forEach(([navID,modalID])=>{const button=$('#'+navID),active=activeID===modalID;button?.classList.toggle('active',active);button?.setAttribute('aria-pressed',String(active))})}
+function setInlineMessage(id,text='',tone=''){const el=$('#'+id);if(!el)return;el.textContent=text;el.classList.toggle('error',tone==='error');el.classList.toggle('success',tone==='success')}
+function showAccountView(view='main'){const main=$('#accountMainView'),totp=$('#totpSetup');main?.classList.toggle('hidden',view!=='main');totp?.classList.toggle('hidden',view!=='totp');const body=$('#accountModal .modal-body');if(body)body.scrollTop=0}
+window.backAccountMain=()=>{showAccountView('main');setInlineMessage('accountMsg')}
+function showDeviceManagerView(view='main'){const main=$('#deviceManagerMainView'),enroll=$('#enrollPanel'),metrics=$('#metricPolicyPanel');main?.classList.toggle('hidden',view!=='main');enroll?.classList.toggle('hidden',view!=='enroll');metrics?.classList.toggle('hidden',view!=='metrics');const body=$('#deviceManagerModal .modal-body');if(body)body.scrollTop=0}
+window.closeDeviceManagerSubview=()=>{showDeviceManagerView('main');setInlineMessage('enrollMsg')}
 function clearAccountSecrets(){
-  ['accountUsernamePassword','currentPassword','newPassword','totpPassword','totpEnableCode','totpDisableCode'].forEach(id=>{const el=$('#'+id);if(el)el.value=''});
-  const secret=$('#totpSecret'),uri=$('#totpURI'),setup=$('#totpSetup');if(secret)secret.textContent='';if(uri)uri.textContent='';if(setup)setup.classList.add('hidden');
+  ['accountUsernamePassword','currentPassword','newPassword','totpPassword','totpEnablePassword','totpEnableCode','totpDisableCode'].forEach(id=>{const el=$('#'+id);if(el)el.value=''});
+  const secret=$('#totpSecret'),uri=$('#totpURI');if(secret)secret.textContent='';if(uri)uri.textContent='';showAccountView('main');setInlineMessage('accountMsg');
 }
+function activateModal(id){
+  closeMobilePanel();
+  document.querySelectorAll('.modal').forEach(modal=>{
+    if(modal.id===id)return;
+    if(modal.id==='termModal'&&!modal.classList.contains('hidden')&&(term||termWS)){try{window.closeTerminal?.()}catch{modal.classList.add('hidden')}}else modal.classList.add('hidden');
+    if(modal.id==='accountModal')clearAccountSecrets();
+    if(modal.id==='fileModal')fileDeviceID='';
+  });
+  const target=$('#'+id);if(target)target.classList.remove('hidden');syncModalOpenState();
+}
+function closeModal(id){const modal=$('#'+id);if(!modal)return;modal.classList.add('hidden');if(id==='accountModal')clearAccountSecrets();if(id==='deviceManagerModal'){showDeviceManagerView('main');setInlineMessage('deviceManageMsg');setInlineMessage('enrollMsg')}if(id==='fileModal')fileDeviceID='';syncModalOpenState()}
 function closeAllOverlays(){
   closeMobilePanel();
   document.querySelectorAll('.modal').forEach(el=>el.classList.add('hidden'));
   if(term||termWS){try{window.closeTerminal?.()}catch{}}
-  fileDeviceID='';
-  clearAccountSecrets();
+  fileDeviceID='';clearAccountSecrets();showDeviceManagerView('main');document.body.classList.remove('modal-open');
 }
+window.copyCodeValue=async(id,button)=>{const value=$('#'+id)?.textContent||'';if(!value)return;const original=button?.textContent||'复制';try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);else{const input=document.createElement('textarea');input.value=value;input.style.position='fixed';input.style.opacity='0';document.body.appendChild(input);input.select();document.execCommand('copy');input.remove()}if(button){button.textContent='已复制';setTimeout(()=>button.textContent=original,1200)}}catch{if(button){button.textContent='复制失败';setTimeout(()=>button.textContent=original,1200)}}}
 async function api(url,opt={}){opt.headers={...(opt.headers||{}),'Content-Type':'application/json','X-HomeCTL-Request':'1'};const r=await fetch(url,opt);const text=await r.text();if(r.status===401&&!url.startsWith('/api/login')){showLogin();throw new Error('unauthorized')}if(!r.ok){let msg=text||r.statusText;try{const j=JSON.parse(text);msg=j.error||msg}catch{}throw new Error(msg.trim())}try{return JSON.parse(text)}catch{return text}}
 function restoreRememberedUsername(){try{const u=localStorage.getItem('homectl_username')||'';$('#username').value=u;$('#rememberUsername').checked=!!u}catch{}}
 function persistRememberedUsername(){try{if($('#rememberUsername').checked)localStorage.setItem('homectl_username',$('#username').value.trim());else localStorage.removeItem('homectl_username')}catch{}}
@@ -727,7 +843,7 @@ async function persistDeviceOrder(ids){
   const previous=devices.slice(),byID=new Map(devices.map(device=>[device.id,device]));if(ids.length!==devices.length||ids.some(id=>!byID.has(id)))return;
   const changed=ids.some((id,index)=>id!==devices[index]?.id);if(!changed){renderDevices();if(!$('#deviceManagerModal').classList.contains('hidden'))renderDeviceManager();return}
   devices=ids.map(id=>byID.get(id));deviceOrderSaving=true;renderDevices();if(!$('#deviceManagerModal').classList.contains('hidden'))renderDeviceManager();
-  try{await api('/api/devices/order',{method:'PUT',body:JSON.stringify({device_ids:ids})});$('#deviceManageMsg').textContent='设备顺序已保存。'}catch(e){devices=previous;renderDevices();if(!$('#deviceManagerModal').classList.contains('hidden'))renderDeviceManager();$('#deviceManageMsg').textContent=`排序保存失败：${e.message}`}finally{deviceOrderSaving=false}
+  try{await api('/api/devices/order',{method:'PUT',body:JSON.stringify({device_ids:ids})});setInlineMessage('deviceManageMsg','设备顺序已保存。','success')}catch(e){devices=previous;renderDevices();if(!$('#deviceManagerModal').classList.contains('hidden'))renderDeviceManager();setInlineMessage('deviceManageMsg',`排序保存失败：${e.message}`,'error')}finally{deviceOrderSaving=false}
 }
 window.runCmd=async idx=>{const d=devices[idx];if(!d)return;const cmd=prompt('输入要以 root 执行的命令');if(!cmd)return;setResult(d.id,`$ ${cmd}\n\n执行中…`);const started=performance.now();try{const r=await api(`/api/device/${encodeURIComponent(d.id)}/exec`,{method:'POST',body:JSON.stringify({command:cmd})});const elapsed=((performance.now()-started)/1000).toFixed(2);let text=`$ ${cmd}\n\n${r.data||'(无输出)'}`;if(r.error)text+=`\n\n执行失败 · 退出码 ${r.exit_code ?? -1} · ${elapsed}s\n${r.error}`;else text+=`\n\n执行完成 · 退出码 ${r.exit_code||0} · ${elapsed}s`;setResult(d.id,text,!!r.error)}catch(e){setResult(d.id,`$ ${cmd}\n\n请求失败\n${e.message}`,true)}}
 window.action=async(idx,act)=>{const d=devices[idx];if(!d)return;const label=act==='reboot'?'重启':'关机';if(!confirm(`确认${label} ${d.name||d.id}？`))return;setResult(d.id,`正在发送${label}命令…`);try{await api(`/api/device/${encodeURIComponent(d.id)}/action`,{method:'POST',body:JSON.stringify({action:act})});setResult(d.id,`${label}命令已被 Agent 接受。\n等待设备停止心跳后会自动显示离线。`);setTimeout(loadDevices,1000)}catch(e){setResult(d.id,`${label}命令发送失败：${e.message}`,true)}}
@@ -816,7 +932,7 @@ window.openTerminal=idx=>{
   box.style.left='';box.style.top='';box.style.width='';box.style.height='';
   termRestoreRect=null;
   $('#termSizeBtn').textContent='最大化';
-  $('#termModal').classList.remove('hidden');
+  activateModal('termModal');
   if(!terminalIsMobile())centerTerminalWindow();
   $('#terminal').innerHTML='';
   term=new window.TerminalCtor({cursorBlink:true,convertEol:false,fontSize:14,lineHeight:1.1,scrollback:5000,allowProposedApi:false,theme:terminalTheme()});
@@ -880,16 +996,16 @@ window.closeTerminal=()=>{
   try{socket?.close()}catch{}
   try{terminalInstance?.dispose()}catch{}
   termLastCols=0;termLastRows=0;termDrag=null;termRestoreRect=null;
-  $('#termModal').classList.add('hidden');
+  $('#termModal').classList.add('hidden');syncModalOpenState();
 };
-window.openAccount=async()=>{try{account=await api('/api/account');$('#accountUsername').value=account.username;$('#totpStatus').textContent=account.totp_enabled?'已启用。登录时需要 6 位动态验证码。':'未启用。';$('#totpSetupBtn').classList.toggle('hidden',account.totp_enabled);$('#totpDisableBtn').classList.toggle('hidden',!account.totp_enabled);$('#totpDisableCodeWrap').classList.toggle('hidden',!account.totp_enabled);$('#totpSetup').classList.add('hidden');$('#accountMsg').textContent='';$('#accountModal').classList.remove('hidden')}catch(e){alert(e.message)}}
-window.changeUsername=async()=>{const username=$('#accountUsername').value.trim();try{await api('/api/account/username',{method:'POST',body:JSON.stringify({username,current_password:$('#accountUsernamePassword').value})});try{if(localStorage.getItem('homectl_username')!==null)localStorage.setItem('homectl_username',username)}catch{}showLogin('用户名已修改，请使用新用户名重新登录。')}catch(e){$('#accountMsg').textContent=e.message}}
-window.changePassword=async()=>{try{await api('/api/account/password',{method:'POST',body:JSON.stringify({current_password:$('#currentPassword').value,new_password:$('#newPassword').value})});showLogin('密码已修改，请使用新密码重新登录。')}catch(e){$('#accountMsg').textContent=e.message}}
-window.setupTOTP=async()=>{const password=$('#totpPassword').value;if(!password){$('#accountMsg').textContent='请在两步验证区域输入当前密码。';return}try{const r=await api('/api/account/totp/setup',{method:'POST',body:JSON.stringify({current_password:password})});$('#totpPassword').value='';$('#totpSecret').textContent=r.secret;$('#totpURI').textContent=r.otpauth_uri;$('#totpSetup').classList.remove('hidden');$('#accountMsg').textContent=''}catch(e){$('#accountMsg').textContent=e.message}}
-window.enableTOTP=async()=>{const password=$('#totpPassword').value;const code=$('#totpEnableCode').value.trim();if(!password){$('#accountMsg').textContent='请重新输入当前密码后启用两步验证。';return}if(!/^\d{6}$/.test(code)){$('#accountMsg').textContent='请输入 6 位验证码。';return}try{await api('/api/account/totp/enable',{method:'POST',body:JSON.stringify({current_password:password,code})});showLogin('两步验证已启用，请重新登录。')}catch(e){$('#accountMsg').textContent=e.message}}
-window.disableTOTP=async()=>{const password=$('#totpPassword').value;if(!password){$('#accountMsg').textContent='请在两步验证区域输入当前密码。';return}try{await api('/api/account/totp/disable',{method:'POST',body:JSON.stringify({current_password:password,code:$('#totpDisableCode').value})});showLogin('两步验证已关闭，请重新登录。')}catch(e){$('#accountMsg').textContent=e.message}}
-window.openDeviceManager=async()=>{$('#deviceManageMsg').textContent='';$('#enrollPanel').classList.add('hidden');$('#enrollResult').classList.add('hidden');$('#enrollLabel').value='';$('#deviceManagerModal').classList.remove('hidden');await loadDevices();if(!devices.some(d=>d.id===selectedMetricDeviceID))selectedMetricDeviceID=devices[0]?.id||'';renderDeviceManager()}
-window.toggleEnrollPanel=()=>{$('#enrollPanel').classList.toggle('hidden');$('#enrollResult').classList.add('hidden')}
+window.openAccount=async()=>{activateModal('accountModal');showAccountView('main');setInlineMessage('accountMsg','正在加载账户设置…');try{account=await api('/api/account');$('#accountUsername').value=account.username;$('#totpStatus').textContent=account.totp_enabled?'已启用 · 登录时需要 6 位动态验证码':'未启用 · 账户当前仅使用密码验证';$('#totpSetupBtn').classList.toggle('hidden',account.totp_enabled);$('#totpDisableBtn').classList.toggle('hidden',!account.totp_enabled);$('#totpDisableCodeWrap').classList.toggle('hidden',!account.totp_enabled);setInlineMessage('accountMsg')}catch(e){setInlineMessage('accountMsg',e.message,'error')}}
+window.changeUsername=async()=>{const username=$('#accountUsername').value.trim();try{await api('/api/account/username',{method:'POST',body:JSON.stringify({username,current_password:$('#accountUsernamePassword').value})});try{if(localStorage.getItem('homectl_username')!==null)localStorage.setItem('homectl_username',username)}catch{}showLogin('用户名已修改，请使用新用户名重新登录。')}catch(e){setInlineMessage('accountMsg',e.message,'error')}}
+window.changePassword=async()=>{try{await api('/api/account/password',{method:'POST',body:JSON.stringify({current_password:$('#currentPassword').value,new_password:$('#newPassword').value})});showLogin('密码已修改，请使用新密码重新登录。')}catch(e){setInlineMessage('accountMsg',e.message,'error')}}
+window.setupTOTP=async()=>{const password=$('#totpPassword').value;if(!password){setInlineMessage('accountMsg','请先输入当前密码。','error');return}setInlineMessage('accountMsg','正在创建两步验证密钥…');try{const r=await api('/api/account/totp/setup',{method:'POST',body:JSON.stringify({current_password:password})});$('#totpPassword').value='';$('#totpEnablePassword').value='';$('#totpEnableCode').value='';$('#totpSecret').textContent=r.secret;$('#totpURI').textContent=r.otpauth_uri;setInlineMessage('accountMsg');showAccountView('totp')}catch(e){setInlineMessage('accountMsg',e.message,'error')}}
+window.enableTOTP=async()=>{const password=$('#totpEnablePassword').value;const code=$('#totpEnableCode').value.trim();if(!password){setInlineMessage('accountMsg','请再次输入当前密码后启用两步验证。','error');return}if(!/^\d{6}$/.test(code)){setInlineMessage('accountMsg','请输入 6 位验证码。','error');return}try{await api('/api/account/totp/enable',{method:'POST',body:JSON.stringify({current_password:password,code})});showLogin('两步验证已启用，请重新登录。')}catch(e){setInlineMessage('accountMsg',e.message,'error')}}
+window.disableTOTP=async()=>{const password=$('#totpPassword').value;if(!password){setInlineMessage('accountMsg','请先输入当前密码。','error');return}try{await api('/api/account/totp/disable',{method:'POST',body:JSON.stringify({current_password:password,code:$('#totpDisableCode').value})});showLogin('两步验证已关闭，请重新登录。')}catch(e){setInlineMessage('accountMsg',e.message,'error')}}
+window.openDeviceManager=async()=>{activateModal('deviceManagerModal');showDeviceManagerView('main');setInlineMessage('deviceManageMsg','正在加载设备…');$('#enrollResult').classList.add('hidden');$('#enrollLabel').value='';setInlineMessage('enrollMsg');try{await loadDevices();if(!devices.some(d=>d.id===selectedMetricDeviceID))selectedMetricDeviceID=devices[0]?.id||'';renderDeviceManager();setInlineMessage('deviceManageMsg')}catch(e){setInlineMessage('deviceManageMsg',e.message,'error')}}
+window.toggleEnrollPanel=()=>{$('#enrollLabel').value='';$('#enrollResult').classList.add('hidden');setInlineMessage('enrollMsg');showDeviceManagerView('enroll');requestAnimationFrame(()=>$('#enrollLabel')?.focus())}
 function renderDeviceManager(){
   const root=$('#deviceManageRows');if(!root)return;
   const drafts={};root.querySelectorAll('input[data-device-id]').forEach(el=>drafts[el.dataset.deviceId]=el.value);
@@ -900,14 +1016,14 @@ function renderDeviceManager(){
 }
 function renderMetricPolicy(message=''){
   const panel=$('#metricPolicyPanel'),device=devices.find(d=>d.id===selectedMetricDeviceID);if(!panel)return;
-  if(!device){panel.classList.add('hidden');return}panel.classList.remove('hidden');
+  if(!device){if(!$('#metricPolicyPanel').classList.contains('hidden'))showDeviceManagerView('main');return}
   $('#metricPolicyDeviceName').textContent=device.name||device.id;$('#metricPolicyDeviceID').textContent=device.id;
   const status=$('#metricPolicyDeviceStatus');status.classList.toggle('online',!!device.online);status.classList.toggle('offline',!device.online);status.querySelector('span:last-child').textContent=device.online?'在线':'离线';
   const enabled=new Set(metricCardsFor(device));$('#metricPolicyCount').textContent=String(enabled.size);
   $('#metricPolicyOptions').innerHTML=metricCardKeys.map(key=>`<label class="metric-policy-option ${enabled.has(key)?'':'disabled'}"><input type="checkbox" data-metric-key="${key}" ${enabled.has(key)?'checked':''} ${metricPolicySaving?'disabled':''} onchange="setMetricCard('${key}',this.checked)"><span class="metric-policy-option-text"><strong>${metricCardLabels[key]}</strong><small>${enabled.has(key)?'显示并采集':'不显示、不采集'}</small></span></label>`).join('');
   $('#metricPolicyStatus').textContent=message||(device.online?'设置已保存 · 在线修改会立即同步':'设置已保存 · 设备上线后生效');
 }
-window.openMetricCards=idx=>{const device=devices[idx];if(!device)return;selectedMetricDeviceID=device.id;renderDeviceManager();requestAnimationFrame(()=>$('#metricPolicyPanel')?.scrollIntoView({behavior:'smooth',block:'nearest'}))}
+window.openMetricCards=idx=>{const device=devices[idx];if(!device)return;selectedMetricDeviceID=device.id;renderDeviceManager();showDeviceManagerView('metrics')}
 window.setMetricCard=async(key,enabled)=>{
   if(metricPolicySaving||!metricCardKeys.includes(key))return;
   const device=devices.find(d=>d.id===selectedMetricDeviceID);if(!device)return;
@@ -916,20 +1032,20 @@ window.setMetricCard=async(key,enabled)=>{
   device.metric_cards=metricCardKeys.filter(card=>next.has(card));metricPolicySaving=true;renderDevices();renderMetricPolicy('正在保存并同步采集策略…');
   try{const result=await api(`/api/device/${encodeURIComponent(device.id)}/metric-cards`,{method:'PUT',body:JSON.stringify({metric_cards:device.metric_cards})});device.metric_cards=result.metric_cards||device.metric_cards;metricPolicySaving=false;renderDevices();const message=result.applied_online?'已保存 · 在线 Agent 已立即同步':result.agent_online&&result.policy_supported===false?'已保存显示设置 · 请升级 Agent 以停止对应采集':'已保存 · 设备上线后生效';renderMetricPolicy(message)}catch(e){device.metric_cards=previous;metricPolicySaving=false;renderDevices();renderMetricPolicy(`保存失败：${e.message}`)}
 }
-window.saveDeviceName=async idx=>{const input=$(`#manage-name-${idx}`);if(!input)return;const id=input.dataset.deviceId;const name=input.value.trim();if(!name){$('#deviceManageMsg').textContent='设备名不能为空。';return}try{await api(`/api/device/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({name})});$('#deviceManageMsg').textContent='设备名称已保存。';await loadDevices();renderDeviceManager()}catch(e){$('#deviceManageMsg').textContent=e.message}}
-window.deleteManagedDevice=async idx=>{const input=$(`#manage-name-${idx}`);if(!input)return;const id=input.dataset.deviceId;const name=input.value.trim()||id;if(!confirm(`确定删除 ${name}？\n\n这会吊销该设备的长期 Device Token 并断开连接。重新添加时需要在 Agent 端清理 state.json 并使用新的 Enrollment Token。`))return;try{await api(`/api/device/${encodeURIComponent(id)}`,{method:'DELETE'});expandedDevices.delete(id);delete deviceResults[id];if(selectedMetricDeviceID===id)selectedMetricDeviceID='';$('#deviceManageMsg').textContent='设备已删除。';await loadDevices();renderDeviceManager()}catch(e){$('#deviceManageMsg').textContent=e.message}}
-window.createEnrollToken=async()=>{try{const r=await api('/api/enrollment-tokens',{method:'POST',body:JSON.stringify({label:$('#enrollLabel').value})});$('#enrollToken').textContent=r.token;$('#enrollExpiry').textContent=`有效期至 ${fmtDate(r.expires_at)}`;$('#enrollResult').classList.remove('hidden')}catch(e){$('#deviceManageMsg').textContent=e.message}}
+window.saveDeviceName=async idx=>{const input=$(`#manage-name-${idx}`);if(!input)return;const id=input.dataset.deviceId;const name=input.value.trim();if(!name){setInlineMessage('deviceManageMsg','设备名不能为空。','error');return}try{await api(`/api/device/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({name})});setInlineMessage('deviceManageMsg','设备名称已保存。','success');await loadDevices();renderDeviceManager()}catch(e){setInlineMessage('deviceManageMsg',e.message,'error')}}
+window.deleteManagedDevice=async idx=>{const input=$(`#manage-name-${idx}`);if(!input)return;const id=input.dataset.deviceId;const name=input.value.trim()||id;if(!confirm(`确定删除 ${name}？\n\n这会吊销该设备的长期 Device Token 并断开连接。重新添加时需要在 Agent 端清理 state.json 并使用新的 Enrollment Token。`))return;try{await api(`/api/device/${encodeURIComponent(id)}`,{method:'DELETE'});expandedDevices.delete(id);delete deviceResults[id];if(selectedMetricDeviceID===id)selectedMetricDeviceID='';setInlineMessage('deviceManageMsg','设备已删除。','success');await loadDevices();renderDeviceManager()}catch(e){setInlineMessage('deviceManageMsg',e.message,'error')}}
+window.createEnrollToken=async()=>{setInlineMessage('enrollMsg','正在生成一次性 Token…');try{const r=await api('/api/enrollment-tokens',{method:'POST',body:JSON.stringify({label:$('#enrollLabel').value})});$('#enrollToken').textContent=r.token;$('#enrollExpiry').textContent=`有效期至 ${fmtDate(r.expires_at)}`;$('#enrollResult').classList.remove('hidden');setInlineMessage('enrollMsg')}catch(e){setInlineMessage('enrollMsg',e.message,'error')}}
 function pathJoin(base,name){return (base==='/'?'':base.replace(/\/$/,''))+'/'+name}
-window.openFiles=idx=>{const d=devices[idx];if(!d)return;fileDeviceID=d.id;currentFilePath='/';$('#fileTitle').textContent=`文件 · ${d.name||d.id}`;$('#fileModal').classList.remove('hidden');window.loadFiles('/')}
-window.closeFileBrowser=()=>{$('#fileModal').classList.add('hidden');fileDeviceID=''}
-window.loadFiles=async path=>{if(!fileDeviceID)return;path=path||'/';$('#fileMsg').textContent='加载中…';try{const r=await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files?path=${encodeURIComponent(path)}`);currentFilePath=r.path||path;$('#filePath').value=currentFilePath;$('#fileMsg').textContent='';$('#fileRows').innerHTML=(r.entries||[]).map((e,i)=>`<tr><td><span class="file-name" onclick="fileEntry(${i})">${e.is_dir?'📁':'📄'} ${escapeHTML(e.name)}</span>${e.is_symlink?' <span class="badge">link</span>':''}</td><td class="optional">${e.is_dir?'-':humanBytesIEC(e.size)}</td><td class="optional">${fmtDate(e.mod_time)}</td><td class="file-actions">${e.is_dir?'':`<button class="small" onclick="downloadFile(${i})">下载</button>`}<button class="small" onclick="renameFile(${i})">重命名</button><button class="small danger" onclick="deleteFile(${i})">删除</button></td></tr>`).join('');window.currentFileEntries=r.entries||[]}catch(e){$('#fileMsg').textContent=e.message}}
+window.openFiles=idx=>{const d=devices[idx];if(!d)return;fileDeviceID=d.id;currentFilePath='/';$('#fileTitle').textContent=`文件 · ${d.name||d.id}`;activateModal('fileModal');window.loadFiles('/')}
+window.closeFileBrowser=()=>{closeModal('fileModal');fileDeviceID=''}
+window.loadFiles=async path=>{if(!fileDeviceID)return;path=path||'/';setInlineMessage('fileMsg','加载中…');try{const r=await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files?path=${encodeURIComponent(path)}`);currentFilePath=r.path||path;$('#filePath').value=currentFilePath;setInlineMessage('fileMsg');$('#fileRows').innerHTML=(r.entries||[]).map((e,i)=>`<tr><td><span class="file-name" onclick="fileEntry(${i})">${e.is_dir?'📁':'📄'} ${escapeHTML(e.name)}</span>${e.is_symlink?' <span class="badge">link</span>':''}</td><td class="optional">${e.is_dir?'-':humanBytesIEC(e.size)}</td><td class="optional">${fmtDate(e.mod_time)}</td><td class="file-actions">${e.is_dir?'':`<button class="small" onclick="downloadFile(${i})">下载</button>`}<button class="small" onclick="renameFile(${i})">重命名</button><button class="small danger" onclick="deleteFile(${i})">删除</button></td></tr>`).join('');window.currentFileEntries=r.entries||[]}catch(e){setInlineMessage('fileMsg',e.message,'error')}}
 window.fileEntry=i=>{const e=(window.currentFileEntries||[])[i];if(e?.is_dir)window.loadFiles(e.path)}
 window.fileUp=()=>{if(currentFilePath==='/')return;const p=currentFilePath.split('/').filter(Boolean);p.pop();window.loadFiles('/'+p.join('/'))}
 window.downloadFile=i=>{const e=(window.currentFileEntries||[])[i];if(!e)return;location.href=`/api/device/${encodeURIComponent(fileDeviceID)}/files/download?path=${encodeURIComponent(e.path)}`}
-window.newFolder=async()=>{const name=prompt('新目录名称');if(!name)return;try{await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files/mkdir`,{method:'POST',body:JSON.stringify({path:pathJoin(currentFilePath,name)})});await window.loadFiles(currentFilePath)}catch(e){$('#fileMsg').textContent=e.message}}
-window.renameFile=async i=>{const e=(window.currentFileEntries||[])[i];if(!e)return;const name=prompt('新名称',e.name);if(!name||name===e.name)return;try{await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files/rename`,{method:'POST',body:JSON.stringify({path:e.path,target:pathJoin(currentFilePath,name)})});await window.loadFiles(currentFilePath)}catch(err){$('#fileMsg').textContent=err.message}}
-window.deleteFile=async i=>{const e=(window.currentFileEntries||[])[i];if(!e||!confirm(`删除 ${e.name}？\n目录必须为空。`))return;try{await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files/delete`,{method:'POST',body:JSON.stringify({path:e.path})});await window.loadFiles(currentFilePath)}catch(err){$('#fileMsg').textContent=err.message}}
-window.uploadSelectedFile=async input=>{const f=input.files?.[0];if(!f)return;$('#fileMsg').textContent=`正在上传 ${f.name}…`;try{const path=pathJoin(currentFilePath,f.name);const r=await fetch(`/api/device/${encodeURIComponent(fileDeviceID)}/files/upload?path=${encodeURIComponent(path)}`,{method:'POST',headers:{'X-HomeCTL-Request':'1'},body:f});const text=await r.text();if(r.status===401){showLogin();throw new Error('unauthorized')}if(!r.ok)throw new Error(text.trim()||r.statusText);$('#fileMsg').textContent=`上传完成：${f.name}`;await window.loadFiles(currentFilePath)}catch(e){$('#fileMsg').textContent=e.message}finally{input.value=''}}
+window.newFolder=async()=>{const name=prompt('新目录名称');if(!name)return;try{await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files/mkdir`,{method:'POST',body:JSON.stringify({path:pathJoin(currentFilePath,name)})});await window.loadFiles(currentFilePath)}catch(e){setInlineMessage('fileMsg',e.message,'error')}}
+window.renameFile=async i=>{const e=(window.currentFileEntries||[])[i];if(!e)return;const name=prompt('新名称',e.name);if(!name||name===e.name)return;try{await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files/rename`,{method:'POST',body:JSON.stringify({path:e.path,target:pathJoin(currentFilePath,name)})});await window.loadFiles(currentFilePath)}catch(err){setInlineMessage('fileMsg',err.message,'error')}}
+window.deleteFile=async i=>{const e=(window.currentFileEntries||[])[i];if(!e||!confirm(`删除 ${e.name}？\n目录必须为空。`))return;try{await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files/delete`,{method:'POST',body:JSON.stringify({path:e.path})});await window.loadFiles(currentFilePath)}catch(err){setInlineMessage('fileMsg',err.message,'error')}}
+window.uploadSelectedFile=async input=>{const f=input.files?.[0];if(!f)return;setInlineMessage('fileMsg',`正在上传 ${f.name}…`);try{const path=pathJoin(currentFilePath,f.name);const r=await fetch(`/api/device/${encodeURIComponent(fileDeviceID)}/files/upload?path=${encodeURIComponent(path)}`,{method:'POST',headers:{'X-HomeCTL-Request':'1'},body:f});const text=await r.text();if(r.status===401){showLogin();throw new Error('unauthorized')}if(!r.ok)throw new Error(text.trim()||r.statusText);setInlineMessage('fileMsg',`上传完成：${f.name}`,'success');await window.loadFiles(currentFilePath)}catch(e){setInlineMessage('fileMsg',e.message,'error')}finally{input.value=''}}
 function resetExpandedDevicesAfterSuspend(){if(deviceDragState)return;expandedDevices.clear();if(devices[0])expandedDevices.add(devices[0].id);deviceExpansionInitialized=true;if(devices.length&&!$('#app').classList.contains('hidden'))renderDevices()}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)resetExpandedDevicesAfterSuspend()});
 window.addEventListener('pagehide',resetExpandedDevicesAfterSuspend);
