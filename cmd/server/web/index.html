@@ -686,6 +686,76 @@
       #accountModal>.modal-box{height:calc(100dvh - 20px)}
     }
 
+  
+
+    /* v4 collapsed device summaries: one quiet three-slot rail, metric-specific content. */
+    .device-collapsed-summary{
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+      margin-top:17px;padding-top:13px;border-top:1px solid var(--separator)
+    }
+    .device-summary-slot{
+      min-width:0;padding:0 16px 2px
+    }
+    .device-summary-slot:first-child{padding-left:0}
+    .device-summary-slot:last-child{padding-right:0}
+    .device-summary-slot+.device-summary-slot{border-left:1px solid var(--separator)}
+    .device-summary-label{
+      overflow:hidden;color:var(--muted);font-size:11px;font-weight:600;line-height:1.25;text-overflow:ellipsis;white-space:nowrap
+    }
+    .device-summary-value{
+      margin-top:4px;overflow:hidden;color:var(--text);font-size:20px;font-weight:650;line-height:1.15;
+      letter-spacing:-.025em;text-overflow:ellipsis;white-space:nowrap
+    }
+    .device-summary-sub{
+      margin-top:4px;overflow:hidden;color:var(--subtle);font-size:10px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap
+    }
+    .device-collapsed-summary .solid-progress{
+      height:3px;margin-top:8px;background:var(--meter-track)
+    }
+    .device-summary-network{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:7px
+    }
+    .device-summary-network-item{min-width:0}
+    .device-summary-network-head{
+      display:flex;min-width:0;align-items:baseline;justify-content:space-between;gap:5px;color:var(--muted);font-size:9px;line-height:1.2
+    }
+    .device-summary-network-head b{
+      min-width:0;overflow:hidden;color:var(--text);font-size:10px;font-weight:600;text-overflow:ellipsis;white-space:nowrap
+    }
+    .device-summary-network .solid-progress.network-meter{height:3px;margin-top:4px}
+    .device-summary-stats{
+      display:flex;min-width:0;align-items:baseline;gap:9px;margin-top:6px;overflow:hidden;color:var(--muted);font-size:10px;line-height:1.2;white-space:nowrap
+    }
+    .device-summary-stats span{min-width:0}
+    .device-summary-stats b{color:var(--text);font-size:12px;font-weight:650}
+    .device-summary-alert{display:inline-flex!important;align-items:center;gap:4px;color:var(--red)!important}
+    .device-summary-alert::before{content:"";width:5px;height:5px;flex:0 0 auto;border-radius:50%;background:currentColor}
+    .device-summary-alert b{color:var(--red)!important}
+    .device-summary-io{
+      display:flex;min-width:0;gap:10px;margin-top:6px;overflow:hidden;color:var(--muted);font-size:10px;line-height:1.2;white-space:nowrap
+    }
+    .device-summary-io span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+    .device-summary-io b{color:var(--text);font-size:11px;font-weight:600}
+    .device-summary-offline .device-summary-value{color:var(--muted)}
+
+    @media(max-width:700px){
+      .device-collapsed-summary{margin-top:14px;padding-top:11px}
+      .device-summary-slot{padding:0 9px 1px}
+      .device-summary-value{font-size:17px}
+      .device-summary-sub{font-size:9px}
+      .device-summary-network{grid-template-columns:1fr;gap:4px}
+      .device-summary-network-item:nth-child(2){display:none}
+      .device-summary-stats{gap:6px;font-size:9px}
+      .device-summary-stats b{font-size:11px}
+      .device-summary-io{display:grid;gap:2px;font-size:9px}
+      .device-summary-io b{font-size:10px}
+    }
+    @media(max-width:419px){
+      .device-summary-slot{padding-inline:7px}
+      .device-summary-label{font-size:10px}
+      .device-summary-value{font-size:16px}
+    }
+
   </style>
 </head>
 <body>
@@ -888,6 +958,37 @@ function renderMetricCard(key,d,info){
   const read=Number(live.disk_read_bps)||0,write=Number(live.disk_write_bps)||0,iops=Number(live.disk_iops)||0,wait=Number(live.disk_io_wait_pct)||0,latency=Number(live.disk_latency_ms)||0;
   return `<div class="metric io" data-card-key="diskio"><div class="metric-top"><div><div class="metric-label">磁盘 I/O</div><div class="metric-value">${formatIOPS(iops)} IOPS</div></div></div><div class="io-grid"><span>读取<b>${humanRate(read)}</b></span><span>写入<b>${humanRate(write)}</b></span><span>I/O Wait<b>${wait.toFixed(1)}%</b></span><span>估算延迟<b>${latency.toFixed(1)} ms</b></span></div></div>`;
 }
+function summaryOfflineHTML(key){return `<div class="device-summary-slot device-summary-offline"><div class="device-summary-label">${escapeHTML(metricCardLabels[key]||key)}</div><div class="device-summary-value">—</div><div class="device-summary-sub">设备离线</div></div>`}
+function summaryUtilizationHTML(key,label,pct,sub){const p=Number(pct);return `<div class="device-summary-slot"><div class="device-summary-label">${label}</div><div class="device-summary-value">${pctText(p)}</div><div class="device-summary-sub">${escapeHTML(sub)}</div>${segmentedProgressHTML(p,50,'device-summary-meter')}</div>`}
+function renderCollapsedMetricSummary(key,d,info){
+  if(!d.online)return summaryOfflineHTML(key);
+  const live=info||{};
+  if(key==='cpu'){
+    const pct=Number(live.cpu_usage),temp=Number.isFinite(Number(live.cpu_temp_c))?`${Number(live.cpu_temp_c).toFixed(1)}°C`:'温度采集中';
+    return summaryUtilizationHTML(key,'CPU',pct,`${info.cpu_cores||'?'} 核 · ${temp}`);
+  }
+  if(key==='memory'){
+    const total=Number(live.mem_total)||0,used=Math.max(0,total-(Number(live.mem_available)||0)),pct=total?used/total*100:0;
+    return summaryUtilizationHTML(key,'内存',pct,`${humanBytesIEC(used)} / ${humanBytesIEC(total)}`);
+  }
+  if(key==='disk'){
+    const total=Number(live.disk_total)||0,used=Math.max(0,total-(Number(live.disk_free)||0)),pct=total?used/total*100:0;
+    return summaryUtilizationHTML(key,'存储',pct,`${humanBytesSI(used)} / ${humanBytesSI(total)}`);
+  }
+  if(key==='network'){
+    const rx=Number(live.net_rx_bps)||0,tx=Number(live.net_tx_bps)||0,rxPeak=Number(live.net_rx_peak_5m_bps)||0,txPeak=Number(live.net_tx_peak_5m_bps)||0,link=Number(live.net_link_bps)||0;
+    const scale=networkScale(rx,tx,rxPeak,txPeak,link);
+    return `<div class="device-summary-slot"><div class="device-summary-label">网络吞吐</div><div class="device-summary-network"><div class="device-summary-network-item"><div class="device-summary-network-head"><span>↓ 下载</span><b>${humanRate(rx)}</b></div>${networkProgressHTML(throughputPct(rx,scale.bytesPerSecond),'down')}</div><div class="device-summary-network-item"><div class="device-summary-network-head"><span>↑ 上传</span><b>${humanRate(tx)}</b></div>${networkProgressHTML(throughputPct(tx,scale.bytesPerSecond),'up')}</div></div><div class="device-summary-sub">${escapeHTML(scale.label)}</div></div>`;
+  }
+  if(key==='processes'){
+    const total=Number(live.process_total)||0,running=Number(live.process_running)||0,sleeping=Number(live.process_sleeping)||0,zombie=Number(live.process_zombie)||0;
+    const abnormal=zombie>0?`<span class="device-summary-alert"><b>${zombie.toLocaleString()}</b> 僵尸</span>`:'';
+    return `<div class="device-summary-slot"><div class="device-summary-label">进程 / 任务</div><div class="device-summary-value">${total.toLocaleString()}</div><div class="device-summary-stats"><span><b>${running.toLocaleString()}</b> 运行</span><span><b>${sleeping.toLocaleString()}</b> 睡眠</span>${abnormal}</div><div class="device-summary-sub">${zombie>0?'发现异常进程':'60 秒采样 · 无异常'}</div></div>`;
+  }
+  const read=Number(live.disk_read_bps)||0,write=Number(live.disk_write_bps)||0,iops=Number(live.disk_iops)||0,wait=Number(live.disk_io_wait_pct)||0,latency=Number(live.disk_latency_ms)||0;
+  return `<div class="device-summary-slot"><div class="device-summary-label">磁盘 I/O</div><div class="device-summary-value">${formatIOPS(iops)} IOPS</div><div class="device-summary-io"><span>读取 <b>${humanRate(read)}</b></span><span>写入 <b>${humanRate(write)}</b></span></div><div class="device-summary-sub">Wait ${wait.toFixed(1)}% · ${latency.toFixed(1)} ms</div></div>`;
+}
+function collapsedDeviceSummaryHTML(d,info){const keys=metricCardsFor(d).slice(0,3);return `<div class="device-collapsed-summary" aria-label="设备指标摘要">${keys.map(key=>renderCollapsedMetricSummary(key,d,info)).join('')}</div>`}
 function ipDetailHTML(addresses,idx){const value=addresses.join(', ')||'-';return `<div class="detail third ip-detail"><div class="detail-label">IP 地址</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div><button class="copy-ip" onclick="copyDeviceIP(${idx},this)" title="复制 IP 地址" aria-label="复制 IP 地址" ${addresses.length?'':'disabled'}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button></div>`}
 function syncModalOpenState(){const open=[...document.querySelectorAll('.modal')].filter(el=>!el.classList.contains('hidden'));document.body.classList.toggle('modal-open',open.length>0);const activeID=open.at(-1)?.id||'';[['navDeviceManager','deviceManagerModal'],['navAccount','accountModal']].forEach(([navID,modalID])=>{const button=$('#'+navID),active=activeID===modalID;button?.classList.toggle('active',active);button?.setAttribute('aria-pressed',String(active))})}
 function setInlineMessage(id,text='',tone=''){const el=$('#'+id);if(!el)return;el.textContent=text;el.classList.toggle('error',tone==='error');el.classList.toggle('success',tone==='success')}
@@ -949,7 +1050,7 @@ function renderDevices(){
       ipDetailHTML(addresses,idx),detailHTML('Agent 版本',i.agent_version||'-','third'),detailHTML('最后心跳',humanAgo(d.last_seen),'third')
     ].join('');
     const actions=`<div class="actions">${settings.allow_exec?`<button ${d.online?'':'disabled'} onclick="runCmd(${idx})">执行命令</button>`:''}${settings.allow_terminal?`<button ${d.online?'':'disabled'} onclick="openTerminal(${idx})">终端</button>`:''}${settings.file_browser_enabled?`<button ${d.online?'':'disabled'} onclick="openFiles(${idx})">文件</button>`:''}<button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'reboot')">重启</button><button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'poweroff')">关机</button></div>`;
-    const expanded=expandedDevices.has(d.id);return `<div class="card device-card" data-device-id="${escapeHTML(d.id)}"><div class="device-head"><button class="drag-handle" type="button" title="按住并拖动排序" aria-label="拖动调整 ${escapeHTML(d.name||d.id)} 顺序">⠿</button><div class="device-head-main"><div class="device-title"><h3>${escapeHTML(d.name||d.id)}</h3><div class="status-cluster">${status}${uptime}</div></div><div class="device-id">${escapeHTML(d.id)}</div></div><button class="disclosure-btn" onclick="toggleDeviceCard(${idx})" title="${expanded?'收起设备详情':'查看设备详情'}" aria-label="${expanded?'收起设备详情':'查看设备详情'}" aria-expanded="${expanded}"><span>${expanded?'收起':'详情'}</span><svg class="${expanded?'rotated':''}" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div><div class="device-body ${expanded?'':'hidden'}"><div class="metrics">${metrics}</div><div class="details">${details}</div>${actions}${resultHTML(d,idx)}</div></div>`;
+    const expanded=expandedDevices.has(d.id),collapsedSummary=expanded?'':collapsedDeviceSummaryHTML(d,i);return `<div class="card device-card" data-device-id="${escapeHTML(d.id)}"><div class="device-head"><button class="drag-handle" type="button" title="按住并拖动排序" aria-label="拖动调整 ${escapeHTML(d.name||d.id)} 顺序">⠿</button><div class="device-head-main"><div class="device-title"><h3>${escapeHTML(d.name||d.id)}</h3><div class="status-cluster">${status}${uptime}</div></div><div class="device-id">${escapeHTML(d.id)}</div></div><button class="disclosure-btn" onclick="toggleDeviceCard(${idx})" title="${expanded?'收起设备详情':'查看设备详情'}" aria-label="${expanded?'收起设备详情':'查看设备详情'}" aria-expanded="${expanded}"><span>${expanded?'收起':'详情'}</span><svg class="${expanded?'rotated':''}" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>${collapsedSummary}<div class="device-body ${expanded?'':'hidden'}"><div class="metrics">${metrics}</div><div class="details">${details}</div>${actions}${resultHTML(d,idx)}</div></div>`;
   }).join('');
   bindDeviceDragHandles(root,'cards');
 }
