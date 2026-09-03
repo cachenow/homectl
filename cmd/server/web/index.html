@@ -555,6 +555,89 @@
       .seg-progress.network-meter .seg-cell::before{width:min(1.8px,44%)}
     }
 
+  
+
+    /* v2.2 unified solid meters, modal breathing, visible themed scrollbars, light terminal shell */
+    :root{
+      --meter-track:color-mix(in srgb,var(--text) 9%,var(--surface-soft));
+      --modal-scroll-track:color-mix(in srgb,var(--text) 4%,transparent);
+      --modal-scroll-thumb:color-mix(in srgb,var(--text) 24%,transparent);
+      --modal-scroll-thumb-hover:color-mix(in srgb,var(--text) 34%,transparent)
+    }
+
+    /* All utilization meters share one clean continuous rail. */
+    .solid-progress{
+      position:relative;width:100%;max-width:100%;min-width:0;height:7px;margin-top:10px;
+      overflow:hidden;border-radius:999px;background:var(--meter-track)
+    }
+    .solid-progress>i{
+      display:block;width:var(--pct,0%);height:100%;border-radius:inherit;background:var(--meter-idle);
+      transition:width .3s ease,background-color .2s ease
+    }
+    .solid-progress.tone-safe>i{background:var(--meter-safe)}
+    .solid-progress.tone-warn>i{background:var(--meter-warn)}
+    .solid-progress.tone-danger>i{background:var(--meter-danger)}
+    .solid-progress.tone-idle>i{background:var(--meter-idle)}
+    .metric .solid-progress:not(.network-meter){margin-top:auto}
+    .solid-progress.network-meter{height:7px;margin-top:7px;background:var(--meter-track)}
+    .solid-progress.network-meter.network-down>i{background:var(--network-down)}
+    .solid-progress.network-meter.network-up>i{background:var(--network-up)}
+    .metric-caption{max-width:58%;overflow:hidden;text-overflow:ellipsis}
+
+    /* One shared inner rhythm for every modal view/subview so headings never hug the shell. */
+    .modal-body>.modal-view{padding-top:28px}
+    .modal-body>.modal-subview{padding-top:30px}
+    .modal-body>.modal-view>.section:first-child{padding-top:0}
+    .subview-head{margin-bottom:22px}
+    .file-modal-body{padding-top:24px}
+
+    /* Account overview is grouped like a system settings sheet; TOTP remains discoverable at first open. */
+    #accountModal>.modal-box{height:min(720px,calc(100dvh - 64px))}
+    #accountMainView{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-content:start}
+    #accountMainView>.section{
+      min-width:0;padding:18px;border:1px solid var(--separator);border-radius:16px;background:var(--canvas)
+    }
+    #accountMainView>.section:nth-child(3){grid-column:1/-1}
+    #accountMainView>.section+ .section{border-top:1px solid var(--separator)}
+
+    /* Keep native scrolling mechanics, but expose a quiet Apple-like scroll indicator. */
+    .modal-body{
+      scrollbar-width:thin;scrollbar-color:var(--modal-scroll-thumb) transparent;scrollbar-gutter:stable;
+    }
+    .modal-body::-webkit-scrollbar{display:block;width:9px;height:9px}
+    .modal-body::-webkit-scrollbar-track{background:transparent}
+    .modal-body::-webkit-scrollbar-thumb{
+      min-height:42px;border:3px solid transparent;border-radius:999px;background:var(--modal-scroll-thumb);background-clip:content-box
+    }
+    .modal-body::-webkit-scrollbar-thumb:hover{background:var(--modal-scroll-thumb-hover);background-clip:content-box}
+
+    /* Terminal chrome follows the active light/dark theme; xterm content already follows terminalTheme(). */
+    #termModal{background:var(--overlay)}
+    .term-box{
+      background:var(--canvas);border-color:var(--separator-strong);
+      box-shadow:0 22px 70px color-mix(in srgb,#000 20%,transparent)
+    }
+    .term-head{
+      border-bottom-color:var(--separator);background:var(--surface);color:var(--text)
+    }
+    .term-head-actions button{
+      color:var(--text);background:var(--surface-soft);border:1px solid var(--separator);box-shadow:none
+    }
+    .term-head-actions button:hover{background:color-mix(in srgb,var(--text) 8%,var(--surface-soft))}
+    .terminal{background:var(--canvas)}
+
+    @media(max-width:700px){
+      .solid-progress{height:6px}
+      .solid-progress.network-meter{height:6px}
+      .modal-body>.modal-view{padding-top:22px}
+      .modal-body>.modal-subview{padding-top:24px}
+      .file-modal-body{padding-top:20px}
+      #accountMainView{grid-template-columns:1fr;gap:12px}
+      #accountMainView>.section:nth-child(3){grid-column:auto}
+      #accountMainView>.section{padding:16px}
+      #accountModal>.modal-box{height:calc(100dvh - 20px)}
+    }
+
   </style>
 </head>
 <body>
@@ -703,12 +786,15 @@ function fmtDate(ts){return ts?new Date(ts*1000).toLocaleString():'-'}
 function clampPct(n){n=Number(n);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0}
 function pctText(n){return Number.isFinite(Number(n))&&Number(n)>=0?`${Number(n).toFixed(1)}%`:'采集中'}
 function progressToneClass(pct){const n=Number(pct);if(!Number.isFinite(n)||n<0)return 'idle';if(n>=80)return 'danger';if(n>=50)return 'warn';return 'safe'}
-function segmentedProgressHTML(pct,segments=50,extraClass=''){const n=Number(pct);const valid=Number.isFinite(n)&&n>=0;const filled=valid?Math.round(clampPct(n)/100*segments):0;const tone=progressToneClass(pct);return `<div class="seg-progress tone-${tone} ${extraClass}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${valid?clampPct(n).toFixed(1):0}" aria-label="${valid?pctText(n):'采集中'}">${Array.from({length:segments},(_,i)=>`<span class="seg-cell ${i<filled?'filled':''}"></span>`).join('')}</div>`}
-function networkProgressHTML(pct,direction){const n=Number(pct);const valid=Number.isFinite(n)&&n>=0,segments=50,filled=valid?Math.round(clampPct(n)/100*segments):0;return `<div class="seg-progress network-meter network-${direction}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${valid?clampPct(n).toFixed(1):0}" aria-label="${direction==='down'?'下载':'上传'} ${valid?pctText(n):'采集中'}">${Array.from({length:segments},(_,i)=>`<span class="seg-cell ${i<filled?'filled':''}"></span>`).join('')}</div>`}
+function segmentedProgressHTML(pct,segments=50,extraClass=''){const n=Number(pct),valid=Number.isFinite(n)&&n>=0,p=valid?clampPct(n):0,tone=progressToneClass(pct);return `<div class="solid-progress tone-${tone} ${extraClass}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p.toFixed(1)}" aria-label="${valid?pctText(n):'采集中'}"><i style="--pct:${p}%"></i></div>`}
+function networkProgressHTML(pct,direction){const n=Number(pct),valid=Number.isFinite(n)&&n>=0,p=valid?clampPct(n):0;return `<div class="solid-progress network-meter network-${direction}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p.toFixed(1)}" aria-label="${direction==='down'?'下载':'上传'} ${valid?pctText(n):'采集中'}"><i style="--pct:${p}%"></i></div>`}
 function progressHTML(cls,label,pct,sub,sub2=''){return `<div class="metric ${cls}"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-value">${pctText(pct)}</span></div>${segmentedProgressHTML(pct)}<div class="metric-sub">${escapeHTML(sub)}</div>${sub2?`<div class="metric-sub secondary">${escapeHTML(sub2)}</div>`:''}</div>`}
 function detailHTML(label,value,size='half'){return `<div class="detail ${size}"><div class="detail-label">${label}</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div></div>`}
 function metricCardsFor(d){const cards=Array.isArray(d.metric_cards)?d.metric_cards.filter(key=>metricCardKeys.includes(key)):[];return cards.length>=3?cards:metricCardKeys}
-function throughputPct(current,linkBPS,peak){current=Number(current)||0;linkBPS=Number(linkBPS)||0;peak=Number(peak)||0;if(linkBPS>0)return clampPct(current*8/linkBPS*100);if(peak>0)return clampPct(current/peak*100);return 0}
+function niceRateCeiling(value){value=Math.max(1,Number(value)||1);const exp=Math.pow(10,Math.floor(Math.log10(value))),steps=[1,1.2,1.5,2,2.5,3,4,5,7.5,10];for(const step of steps){const candidate=step*exp;if(candidate>=value)return candidate}return 10*exp}
+function humanBitsRate(bps){bps=Number(bps)||0;if(bps<=0)return '未知';const units=['b/s','kb/s','Mb/s','Gb/s','Tb/s'];let i=0;while(bps>=1000&&i<units.length-1){bps/=1000;i++}return `${bps.toFixed(i&&bps<100?1:0)} ${units[i]}`}
+function networkScale(rx,tx,rxPeak,txPeak,linkBPS){rx=Math.max(0,Number(rx)||0);tx=Math.max(0,Number(tx)||0);rxPeak=Math.max(rx,Number(rxPeak)||0);txPeak=Math.max(tx,Number(txPeak)||0);linkBPS=Math.max(0,Number(linkBPS)||0);if(linkBPS>0){const bytesPerSecond=linkBPS/8;return {bytesPerSecond,label:`链路 ${humanBitsRate(linkBPS)}`,mode:'capacity'}}const observed=Math.max(rx,tx,rxPeak,txPeak);const floor=128*1024;const bytesPerSecond=niceRateCeiling(Math.max(floor,observed*1.15));return {bytesPerSecond,label:`自适应上限 ${humanRate(bytesPerSecond)}`,mode:'adaptive'}}
+function throughputPct(current,scaleBytesPerSecond){current=Math.max(0,Number(current)||0);scaleBytesPerSecond=Math.max(1,Number(scaleBytesPerSecond)||1);return clampPct(current/scaleBytesPerSecond*100)}
 function formatIOPS(value){value=Number(value)||0;if(value<=0)return '0';return value>=100?Math.round(value).toLocaleString():value.toFixed(value>=10?1:2)}
 function renderMetricCard(key,d,info){
   const live=d.online?info:{};
@@ -728,8 +814,9 @@ function renderMetricCard(key,d,info){
   }
   if(key==='network'){
     const rx=Number(live.net_rx_bps)||0,tx=Number(live.net_tx_bps)||0,rxPeak=Number(live.net_rx_peak_5m_bps)||0,txPeak=Number(live.net_tx_peak_5m_bps)||0,link=Number(live.net_link_bps)||0;
-    const caption=d.online?(live.net_interface?escapeHTML(live.net_interface):'默认路由'):'已归零';
-    return `<div class="metric network" data-card-key="network"><div class="metric-top"><div class="metric-label">网络吞吐</div><span class="metric-caption">${caption}</span></div><div class="flow-lines"><div class="flow"><div class="flow-head"><span class="down">下载</span><b>${humanRate(rx)}</b></div>${networkProgressHTML(throughputPct(rx,link,rxPeak),'down')}<div class="flow-peak">5 分钟峰值 ${humanRate(rxPeak)}</div></div><div class="flow"><div class="flow-head"><span class="up">上传</span><b>${humanRate(tx)}</b></div>${networkProgressHTML(throughputPct(tx,link,txPeak),'up')}<div class="flow-peak">5 分钟峰值 ${humanRate(txPeak)}</div></div></div></div>`;
+    const scale=networkScale(rx,tx,rxPeak,txPeak,link),iface=d.online?(live.net_interface?escapeHTML(live.net_interface):'默认路由'):'已归零';
+    const caption=d.online?`${iface} · ${escapeHTML(scale.label)}`:iface;
+    return `<div class="metric network" data-card-key="network"><div class="metric-top"><div class="metric-label">网络吞吐</div><span class="metric-caption" title="${escapeHTML(scale.label)}">${caption}</span></div><div class="flow-lines"><div class="flow"><div class="flow-head"><span class="down">下载</span><b>${humanRate(rx)}</b></div>${networkProgressHTML(throughputPct(rx,scale.bytesPerSecond),'down')}<div class="flow-peak">5 分钟峰值 ${humanRate(rxPeak)}</div></div><div class="flow"><div class="flow-head"><span class="up">上传</span><b>${humanRate(tx)}</b></div>${networkProgressHTML(throughputPct(tx,scale.bytesPerSecond),'up')}<div class="flow-peak">5 分钟峰值 ${humanRate(txPeak)}</div></div></div></div>`;
   }
   if(key==='processes'){
     const total=Number(live.process_total)||0,running=Number(live.process_running)||0,sleeping=Number(live.process_sleeping)||0,zombie=Number(live.process_zombie)||0;
