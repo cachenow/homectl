@@ -423,11 +423,11 @@
     .seg-progress.compact{height:8px;margin-top:5px}
     .seg-progress.compact .seg-cell::before{width:min(2px,52%)}
     .flow-lines{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:auto}
-    .flow{min-width:0;color:var(--muted);font-size:10px}
+    .flow{min-width:0;color:var(--muted);font-size:11px}
     .flow-head{display:flex;min-width:0;align-items:baseline;justify-content:space-between;gap:5px}
     .flow-head b{min-width:0;overflow:hidden;color:var(--text);font-size:12px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
     .flow-head .down{color:var(--accent)}.flow-head .up{color:var(--green)}
-    .flow-peak{margin-top:3px;color:var(--subtle);font-size:9px;line-height:1.2;white-space:nowrap}
+    .flow-peak{margin-top:3px;color:var(--subtle);font-size:11px;line-height:1.2;white-space:nowrap}
     .process-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:auto}
     .process-grid span,.io-grid span{min-width:0;padding:4px;border-radius:8px;background:var(--surface-soft);color:var(--muted);font-size:9px;line-height:1.2}
     .process-grid span{text-align:center}.process-grid b{display:block;margin-bottom:1px;color:var(--text);font-size:13px;font-weight:600}
@@ -567,7 +567,7 @@
 
     /* All utilization meters share one clean continuous rail. */
     .solid-progress{
-      position:relative;width:100%;max-width:100%;min-width:0;height:7px;margin-top:10px;
+      position:relative;width:100%;max-width:100%;min-width:0;height:12px;margin-top:10px;
       overflow:hidden;border-radius:999px;background:var(--meter-track)
     }
     .solid-progress>i{
@@ -579,7 +579,7 @@
     .solid-progress.tone-danger>i{background:var(--meter-danger)}
     .solid-progress.tone-idle>i{background:var(--meter-idle)}
     .metric .solid-progress:not(.network-meter){margin-top:auto}
-    .solid-progress.network-meter{height:7px;margin-top:7px;background:var(--meter-track)}
+    .solid-progress.network-meter{height:10px;margin-top:7px;background:var(--meter-track)}
     .solid-progress.network-meter.network-down>i{background:var(--network-down)}
     .solid-progress.network-meter.network-up>i{background:var(--network-up)}
     .metric-caption{max-width:58%;overflow:hidden;text-overflow:ellipsis}
@@ -611,20 +611,68 @@
     }
     .modal-body::-webkit-scrollbar-thumb:hover{background:var(--modal-scroll-thumb-hover);background-clip:content-box}
 
-    /* Terminal chrome follows the active light/dark theme; xterm content already follows terminalTheme(). */
+    /* Terminal v3: neutral light profile + geometry-safe xterm padding.
+       FitAddon accounts for padding on .xterm itself, not padding on its parent. */
+    :root{
+      --term-window:#151517;
+      --term-header:#1c1c1e;
+      --term-frame:#111113;
+      --term-canvas:#0b0b0d;
+      --term-hairline:#ffffff24;
+      --term-button:#2a2a2d;
+      --term-button-hover:#353538;
+      --term-scroll:#ffffff24;
+    }
+    :root[data-theme="light"]{
+      --term-window:#e9e9ed;
+      --term-header:#f5f5f7;
+      --term-frame:#e2e2e7;
+      --term-canvas:#f7f7f4;
+      --term-hairline:#00000020;
+      --term-button:#ffffff;
+      --term-button-hover:#e6e6eb;
+      --term-scroll:#00000024;
+    }
+    @media(prefers-color-scheme:light){
+      :root[data-theme="system"]{
+        --term-window:#e9e9ed;
+        --term-header:#f5f5f7;
+        --term-frame:#e2e2e7;
+        --term-canvas:#f7f7f4;
+        --term-hairline:#00000020;
+        --term-button:#ffffff;
+        --term-button-hover:#e6e6eb;
+        --term-scroll:#00000024;
+      }
+    }
     #termModal{background:var(--overlay)}
     .term-box{
-      background:var(--canvas);border-color:var(--separator-strong);
-      box-shadow:0 22px 70px color-mix(in srgb,#000 20%,transparent)
+      background:var(--term-window);border-color:var(--term-hairline);
+      box-shadow:0 22px 70px color-mix(in srgb,#000 18%,transparent)
     }
     .term-head{
-      border-bottom-color:var(--separator);background:var(--surface);color:var(--text)
+      border-bottom-color:var(--term-hairline);background:var(--term-header);color:var(--text)
     }
     .term-head-actions button{
-      color:var(--text);background:var(--surface-soft);border:1px solid var(--separator);box-shadow:none
+      color:var(--text);background:var(--term-button);border:1px solid var(--term-hairline);box-shadow:none
     }
-    .term-head-actions button:hover{background:color-mix(in srgb,var(--text) 8%,var(--surface-soft))}
-    .terminal{background:var(--canvas)}
+    .term-head-actions button:hover{background:var(--term-button-hover)}
+    /* Parent padding used to make PTY row calculation too tall. Keep parent padding at zero
+       and move the visual inset onto .xterm, which FitAddon explicitly subtracts. */
+    .terminal{padding:0;background:var(--term-frame)}
+    .terminal .xterm{
+      width:100%;height:100%;padding:9px 10px;background:var(--term-frame);
+      box-shadow:inset 0 0 0 1px var(--term-hairline)
+    }
+    .terminal .xterm-viewport,
+    .terminal .xterm-screen,
+    .terminal .xterm-screen canvas{background-color:var(--term-canvas)!important}
+    .terminal .xterm-viewport{
+      scrollbar-width:thin;scrollbar-color:var(--term-scroll) transparent
+    }
+    .terminal .xterm-viewport::-webkit-scrollbar{width:8px}
+    .terminal .xterm-viewport::-webkit-scrollbar-track{background:transparent}
+    .terminal .xterm-viewport::-webkit-scrollbar-thumb{border:2px solid transparent;border-radius:999px;background:var(--term-scroll);background-clip:content-box}
 
     @media(max-width:700px){
       .solid-progress{height:6px}
@@ -755,7 +803,7 @@ window.FitAddonCtor = FitAddon;
 </script>
 <script>
 const $=s=>document.querySelector(s);
-let term=null, termWS=null, termFit=null, termResizeObserver=null, termResizeTimer=null, termFitFrame=null, termLastCols=0, termLastRows=0, termDrag=null, termRestoreRect=null, devices=[], settings={web_refresh_ms:5000,ui_result_ttl_ms:20000}, refreshTimer=null;
+let term=null, termWS=null, termFit=null, termResizeObserver=null, termResizeDisposable=null, termResizeTimer=null, termFitFrame=null, termFitForcePending=false, termStabilizeTimers=[], termLastCols=0, termLastRows=0, termDrag=null, termRestoreRect=null, devices=[], settings={web_refresh_ms:5000,ui_result_ttl_ms:20000}, refreshTimer=null;
 let account=null, fileDeviceID='', currentFilePath='/';
 let deviceExpansionInitialized=false;
 let selectedMetricDeviceID='', metricPolicySaving=false, deviceDragState=null, deviceOrderSaving=false;
@@ -767,10 +815,25 @@ const themeMedia=window.matchMedia('(prefers-color-scheme: dark)');
 function escapeHTML(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function currentThemeMode(){return document.documentElement.dataset.theme||'system'}
 function resolvedTheme(){const mode=currentThemeMode();return mode==='system'?(themeMedia.matches?'dark':'light'):mode}
-function terminalTheme(){return resolvedTheme()==='light'?{background:'#ffffff',foreground:'#1d1d1f',cursor:'#0066cc',selectionBackground:'#0066cc2b'}:{background:'#000000',foreground:'#f5f5f7',cursor:'#2997ff',selectionBackground:'#2997ff42'}}
+function terminalTheme(){
+  if(resolvedTheme()==='light')return {
+    background:'#f7f7f4',foreground:'#2c2c2e',cursor:'#007aff',cursorAccent:'#ffffff',
+    selectionBackground:'#007aff2b',selectionForeground:'#1d1d1f',selectionInactiveBackground:'#007aff18',
+    black:'#2c2c2e',red:'#c9342b',green:'#2f7d3f',yellow:'#8a6f00',blue:'#0066cc',magenta:'#7d4c92',cyan:'#147d82',white:'#d1d1d6',
+    brightBlack:'#6e6e73',brightRed:'#d70015',brightGreen:'#248a3d',brightYellow:'#9a6700',brightBlue:'#007aff',brightMagenta:'#8944ab',brightCyan:'#008f99',brightWhite:'#ffffff',
+    scrollbarSliderBackground:'#0000001f',scrollbarSliderHoverBackground:'#00000033',scrollbarSliderActiveBackground:'#00000047'
+  };
+  return {
+    background:'#0b0b0d',foreground:'#f5f5f7',cursor:'#2997ff',cursorAccent:'#000000',
+    selectionBackground:'#2997ff42',selectionForeground:'#ffffff',selectionInactiveBackground:'#2997ff2a',
+    black:'#1d1d1f',red:'#ff453a',green:'#30d158',yellow:'#ffd60a',blue:'#0a84ff',magenta:'#bf5af2',cyan:'#64d2ff',white:'#e5e5ea',
+    brightBlack:'#8e8e93',brightRed:'#ff6961',brightGreen:'#4cd964',brightYellow:'#ffe66d',brightBlue:'#409cff',brightMagenta:'#da8fff',brightCyan:'#70d7ff',brightWhite:'#ffffff',
+    scrollbarSliderBackground:'#ffffff24',scrollbarSliderHoverBackground:'#ffffff38',scrollbarSliderActiveBackground:'#ffffff50'
+  }
+}
 function updateThemeButtons(){['dark','light','system'].forEach(mode=>{const suffix=mode[0].toUpperCase()+mode.slice(1);const active=currentThemeMode()===mode;[$('#theme'+suffix),$('#mobileTheme'+suffix)].forEach(button=>{button?.classList.toggle('active',active);button?.setAttribute('aria-pressed',String(active))})})}
-window.setTheme=mode=>{if(!['dark','light','system'].includes(mode))return;document.documentElement.dataset.theme=mode;try{localStorage.setItem('homectl_theme',mode)}catch{}updateThemeButtons();if(term){term.options.theme=terminalTheme();requestAnimationFrame(fitTerminal)}}
-themeMedia.addEventListener?.('change',()=>{if(currentThemeMode()==='system'){if(term)term.options.theme=terminalTheme();requestAnimationFrame(()=>term&&fitTerminal())}});
+window.setTheme=mode=>{if(!['dark','light','system'].includes(mode))return;document.documentElement.dataset.theme=mode;try{localStorage.setItem('homectl_theme',mode)}catch{}updateThemeButtons();if(term){term.options.theme=terminalTheme();requestAnimationFrame(()=>requestTerminalFit(true))}}
+themeMedia.addEventListener?.('change',()=>{if(currentThemeMode()==='system'&&term){term.options.theme=terminalTheme();requestAnimationFrame(()=>requestTerminalFit(true))}});
 function closeMobilePanel(){const panel=$('#mobilePanel'),trigger=$('#mobilePanelTrigger');panel?.classList.remove('open');trigger?.setAttribute('aria-expanded','false')}
 window.closeMobilePanel=closeMobilePanel;
 window.toggleMobilePanel=e=>{e?.stopPropagation?.();const panel=$('#mobilePanel'),trigger=$('#mobilePanelTrigger');if(!panel||!trigger)return;const opening=!panel.classList.contains('open');panel.classList.toggle('open',opening);trigger.setAttribute('aria-expanded',String(opening))};
@@ -934,18 +997,19 @@ async function persistDeviceOrder(ids){
 }
 window.runCmd=async idx=>{const d=devices[idx];if(!d)return;const cmd=prompt('输入要以 root 执行的命令');if(!cmd)return;setResult(d.id,`$ ${cmd}\n\n执行中…`);const started=performance.now();try{const r=await api(`/api/device/${encodeURIComponent(d.id)}/exec`,{method:'POST',body:JSON.stringify({command:cmd})});const elapsed=((performance.now()-started)/1000).toFixed(2);let text=`$ ${cmd}\n\n${r.data||'(无输出)'}`;if(r.error)text+=`\n\n执行失败 · 退出码 ${r.exit_code ?? -1} · ${elapsed}s\n${r.error}`;else text+=`\n\n执行完成 · 退出码 ${r.exit_code||0} · ${elapsed}s`;setResult(d.id,text,!!r.error)}catch(e){setResult(d.id,`$ ${cmd}\n\n请求失败\n${e.message}`,true)}}
 window.action=async(idx,act)=>{const d=devices[idx];if(!d)return;const label=act==='reboot'?'重启':'关机';if(!confirm(`确认${label} ${d.name||d.id}？`))return;setResult(d.id,`正在发送${label}命令…`);try{await api(`/api/device/${encodeURIComponent(d.id)}/action`,{method:'POST',body:JSON.stringify({action:act})});setResult(d.id,`${label}命令已被 Agent 接受。\n等待设备停止心跳后会自动显示离线。`);setTimeout(loadDevices,1000)}catch(e){setResult(d.id,`${label}命令发送失败：${e.message}`,true)}}
-function scheduleTerminalResize(){
+function scheduleTerminalResize(force=false){
   if(termResizeTimer!==null)clearTimeout(termResizeTimer);
   termResizeTimer=setTimeout(()=>{
     termResizeTimer=null;
     if(!term||!termWS||termWS.readyState!==1)return;
     const cols=term.cols,rows=term.rows;
-    if(cols<8||rows<8||cols===termLastCols&&rows===termLastRows)return;
+    if(cols<8||rows<8)return;
+    if(!force&&cols===termLastCols&&rows===termLastRows)return;
     termWS.send(JSON.stringify({type:'resize',cols,rows}));
     termLastCols=cols;termLastRows=rows;
-  },140);
+  },80);
 }
-function fitTerminal(scheduleRemote=true){
+function fitTerminal(scheduleRemote=true,forceRemote=false){
   if(!term||!termFit)return false;
   try{
     termFit.fit();
@@ -953,12 +1017,23 @@ function fitTerminal(scheduleRemote=true){
     console.error('terminal fit failed',e);
     return false;
   }
-  if(scheduleRemote)scheduleTerminalResize();
+  if(scheduleRemote)scheduleTerminalResize(forceRemote);
   return term.cols>0&&term.rows>0;
 }
-function requestTerminalFit(){
+function requestTerminalFit(forceRemote=false){
+  termFitForcePending=termFitForcePending||forceRemote;
   if(termFitFrame!==null)return;
-  termFitFrame=requestAnimationFrame(()=>{termFitFrame=null;keepTerminalInViewport();fitTerminal()});
+  termFitFrame=requestAnimationFrame(()=>{
+    const force=termFitForcePending;termFitForcePending=false;termFitFrame=null;
+    keepTerminalInViewport();fitTerminal(true,force)
+  });
+}
+function stabilizeTerminalGeometry(forceRemote=true){
+  termStabilizeTimers.forEach(clearTimeout);termStabilizeTimers=[];
+  const run=force=>{if(!term)return;fitTerminal(true,force)};
+  requestAnimationFrame(()=>requestAnimationFrame(()=>run(forceRemote)));
+  [80,220,500].forEach((delay,index)=>termStabilizeTimers.push(setTimeout(()=>run(forceRemote&&index===2),delay)));
+  document.fonts?.ready?.then(()=>{if(term)requestTerminalFit(true)}).catch?.(()=>{});
 }
 function terminalIsMobile(){return window.matchMedia('(max-width:700px)').matches}
 function clampTerminalPosition(left,top,width,height){
@@ -1022,7 +1097,7 @@ window.openTerminal=idx=>{
   activateModal('termModal');
   if(!terminalIsMobile())centerTerminalWindow();
   $('#terminal').innerHTML='';
-  term=new window.TerminalCtor({cursorBlink:true,convertEol:false,fontSize:14,lineHeight:1.1,scrollback:5000,allowProposedApi:false,theme:terminalTheme()});
+  term=new window.TerminalCtor({cursorBlink:true,convertEol:false,fontFamily:'SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace',fontSize:14,lineHeight:1.12,scrollback:5000,minimumContrastRatio:4.5,allowProposedApi:false,theme:terminalTheme()});
   termFit=new window.FitAddonCtor();
   term.loadAddon(termFit);
   term.open($('#terminal'));
@@ -1040,15 +1115,19 @@ window.openTerminal=idx=>{
   termWS=socket;
   socket.onopen=()=>{
     if(termWS!==socket||term!==terminalInstance)return;
-    fitTerminal();
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{fitTerminal();term.focus()}));
-    setTimeout(()=>fitTerminal(),120);
+    /* Force one PTY window-change even when the URL dimensions already match.
+       Full-screen TUIs such as htop then receive a definitive SIGWINCH after layout settles. */
+    fitTerminal(true,true);
+    stabilizeTerminalGeometry(true);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>term?.focus()));
   };
   socket.onmessage=e=>{if(termWS!==socket||term!==terminalInstance)return;const m=JSON.parse(e.data);if(m.type==='data')terminalInstance.write(Uint8Array.from(atob(m.data),c=>c.charCodeAt(0)));else if(m.type==='exit')terminalInstance.write(`\r\n[终端已结束] ${m.error||''}\r\n`)};
   socket.onclose=()=>{if(termWS===socket&&term===terminalInstance)terminalInstance.write('\r\n[连接已关闭]\r\n')};
   terminalInstance.onData(data=>{if(termWS===socket&&socket.readyState===1)socket.send(JSON.stringify({type:'input',data:btoa(unescape(encodeURIComponent(data))) }))});
-  termResizeObserver=new ResizeObserver(requestTerminalFit);
+  termResizeDisposable=terminalInstance.onResize(()=>scheduleTerminalResize());
+  termResizeObserver=new ResizeObserver(()=>requestTerminalFit());
   termResizeObserver.observe($('#terminal'));
+  termResizeObserver.observe(box);
   window.addEventListener('resize',onTerminalViewportResize);
 };
 window.toggleTerminalMaximize=()=>{
@@ -1074,10 +1153,13 @@ window.closeTerminal=()=>{
   window.removeEventListener('resize',onTerminalViewportResize);
   try{termResizeObserver?.disconnect()}catch{}
   termResizeObserver=null;
+  try{termResizeDisposable?.dispose?.()}catch{}
+  termResizeDisposable=null;
+  termStabilizeTimers.forEach(clearTimeout);termStabilizeTimers=[];
   if(termResizeTimer!==null)clearTimeout(termResizeTimer);
   termResizeTimer=null;
   if(termFitFrame!==null)cancelAnimationFrame(termFitFrame);
-  termFitFrame=null;
+  termFitFrame=null;termFitForcePending=false;
   const socket=termWS,terminalInstance=term;
   termWS=null;term=null;termFit=null;
   try{socket?.close()}catch{}
