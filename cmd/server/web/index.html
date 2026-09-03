@@ -393,6 +393,77 @@
       .brand h1{font-size:18px}
     }
 
+    /* v2.0 device metrics and explicit handle-only sorting. */
+    .device-head-main{flex:1}
+    .drag-handle{
+      display:grid;flex:0 0 auto;width:30px;height:38px;min-height:38px;padding:0;place-items:center;
+      border:0;border-radius:9px;background:transparent;color:var(--subtle);box-shadow:none;
+      cursor:grab;font:21px/1 ui-monospace,SFMono-Regular,Menlo,monospace;touch-action:none;user-select:none;-webkit-user-select:none
+    }
+    .drag-handle:hover{background:var(--surface-soft);color:var(--muted)}
+    .drag-handle:active{cursor:grabbing;transform:none}
+    .device-card.drag-source,.manage-table tr.drag-source{display:none}
+    .device-drop-slot{height:76px;margin:0 0 24px;border:1px solid var(--accent);border-radius:18px;background:var(--accent-soft)}
+    .manager-drop-row td{height:58px;padding:0!important;border:1px solid var(--accent)!important;background:var(--accent-soft)}
+    .drag-ghost{
+      position:fixed;z-index:100;display:flex;min-height:58px;align-items:center;gap:10px;padding:10px 14px;
+      border:1px solid var(--accent);border-radius:16px;background:var(--surface-raised);color:var(--text);
+      box-shadow:0 18px 54px color-mix(in srgb,#000 32%,transparent);pointer-events:none;opacity:.97
+    }
+    .drag-ghost .dots{color:var(--accent);font:20px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .drag-ghost strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600}
+    .drag-ghost small{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+
+    .device-card,.metric,.detail,.metric-policy-panel{background-clip:padding-box;-webkit-background-clip:padding-box}
+    .metric{display:flex;height:156px;min-width:0;flex-direction:column;overflow:hidden}
+    .metric-top{align-items:flex-start}
+    .metric-temp,.metric-caption{display:inline-flex;align-items:center;color:var(--muted);font-size:12px;white-space:nowrap}
+    .metric .seg-progress:not(.compact){margin-top:auto}
+    .seg-progress.compact{height:8px;margin-top:5px}
+    .seg-progress.compact .seg-cell::before{width:min(2px,52%)}
+    .flow-lines{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:auto}
+    .flow{min-width:0;color:var(--muted);font-size:10px}
+    .flow-head{display:flex;min-width:0;align-items:baseline;justify-content:space-between;gap:5px}
+    .flow-head b{min-width:0;overflow:hidden;color:var(--text);font-size:12px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
+    .flow-head .down{color:var(--accent)}.flow-head .up{color:var(--green)}
+    .flow-peak{margin-top:3px;color:var(--subtle);font-size:9px;line-height:1.2;white-space:nowrap}
+    .process-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:auto}
+    .process-grid span,.io-grid span{min-width:0;padding:4px;border-radius:8px;background:var(--surface-soft);color:var(--muted);font-size:9px;line-height:1.2}
+    .process-grid span{text-align:center}.process-grid b{display:block;margin-bottom:1px;color:var(--text);font-size:13px;font-weight:600}
+    .process-grid .zombie.active{padding:3px;background:var(--red-soft);color:var(--red)}.process-grid .zombie.active b{color:var(--red)}
+    .io-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:auto}
+    .io-grid span{padding:4px 6px;line-height:1.15}.io-grid b{display:block;margin-top:1px;overflow:hidden;color:var(--text);font-size:11px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
+    .ip-detail{position:relative;padding-right:48px}
+    .copy-ip{position:absolute;right:8px;top:8px;display:grid;width:30px;height:30px;min-height:30px;padding:0;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--accent);box-shadow:none}
+    .copy-ip:hover{background:var(--accent-soft)}.copy-ip.copied{background:var(--green-soft);color:var(--green)}
+    .copy-ip svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+    .manage-table{min-width:940px}.manage-table .handle-cell{width:44px;padding-right:0}.manage-table .handle-cell .drag-handle{width:28px}
+    .manage-table tr.policy-selected td{background:var(--accent-soft)}
+    .metric-policy-panel{margin-top:20px;padding:24px;border:1px solid var(--hairline);border-radius:18px;background:var(--surface)}
+    .metric-policy-target{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 12px;border-radius:11px;background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+    .metric-policy-target-main{min-width:0;flex:1}.metric-policy-target small{display:block;margin-bottom:2px;color:var(--muted);font-size:10px}
+    .metric-policy-target strong{color:var(--text);font-size:15px;font-weight:600}.metric-policy-target code{margin-left:7px;color:var(--subtle);font:10px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .metric-policy-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .metric-policy-head h3{margin:0;font-size:21px}.metric-policy-head-copy{margin-top:5px;color:var(--muted);font-size:14px}.metric-policy-count{color:var(--muted);font-size:12px;white-space:nowrap}
+    .metric-policy-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .metric-policy-option{display:flex;min-height:50px;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:var(--surface-soft);color:var(--text);font-size:13px;cursor:pointer}
+    .metric-policy-option input{width:17px;height:17px;min-height:17px;margin:0;padding:0;accent-color:var(--accent)}
+    .metric-policy-option-text{display:grid;gap:2px;min-width:0}.metric-policy-option-text strong{font-weight:600}.metric-policy-option-text small{color:var(--muted);font-size:11px}
+    .metric-policy-option.disabled small{color:var(--red)}
+    .metric-policy-sync{display:flex;align-items:center;gap:7px;margin-top:13px;color:var(--muted);font-size:12px}.metric-policy-sync i{width:7px;height:7px;border-radius:50%;background:var(--green)}
+    .manager-footnote{margin:10px 2px 0;color:var(--subtle);font-size:11px}
+
+    @media(max-width:900px){
+      .metrics{grid-template-columns:1fr;gap:12px}
+      .metric-policy-options{grid-template-columns:1fr}
+    }
+    @media(max-width:700px){
+      .drag-handle{width:26px;height:34px;min-height:34px;font-size:19px}
+      .metric{height:156px}
+      .metric-policy-panel{padding:18px}
+    }
+
   </style>
 </head>
 <body>
@@ -464,7 +535,7 @@
 <div id="deviceManagerModal" class="modal hidden"><div class="modal-box modal-wide">
   <div class="modal-head"><h2>设备管理</h2><button onclick="closeModal('deviceManagerModal')">关闭</button></div>
   <div class="section">
-    <div class="manage-toolbar"><div><h3>设备</h3><div class="muted">修改控制台显示名、添加或删除设备。</div></div><button class="primary" onclick="toggleEnrollPanel()">添加设备</button></div>
+    <div class="manage-toolbar"><div><h3>设备</h3><div class="muted">修改名称不会改变顺序；按住 ⠿ 可调整设备位置。</div></div><button class="primary" onclick="toggleEnrollPanel()">添加设备</button></div>
     <div id="enrollPanel" class="manage-enroll hidden">
       <div class="field"><label>自定义设备名（可选）</label><input id="enrollLabel" maxlength="128" placeholder="例如：HomeServer"></div>
       <div class="muted">填写后将作为设备首次上线时的控制台名称，并保留大小写；留空则使用 Agent 配置中的名称或主机名。</div>
@@ -474,8 +545,14 @@
   </div>
   <div class="section">
     <div id="deviceManageMsg" class="muted" style="margin-bottom:8px"></div>
-    <div class="table-wrap"><table class="manage-table"><thead><tr><th>自定义设备名</th><th>状态</th><th>设备 ID</th><th>最后心跳</th><th>操作</th></tr></thead><tbody id="deviceManageRows"></tbody></table></div>
-    <div class="muted" style="margin-top:10px">删除设备会吊销该设备的长期 Device Token，并立即断开当前连接。</div>
+    <div class="table-wrap"><table class="manage-table"><thead><tr><th aria-label="排序"></th><th>自定义设备名</th><th>状态</th><th>设备 ID</th><th>最后心跳</th><th>操作</th></tr></thead><tbody id="deviceManageRows"></tbody></table></div>
+    <div class="manager-footnote">⠿ 只用于拖动排序；点击设备行内的“指标卡片”切换要设置的设备。删除设备会吊销长期 Device Token 并立即断开连接。</div>
+    <section id="metricPolicyPanel" class="metric-policy-panel hidden" aria-labelledby="metricPolicyTitle">
+      <div class="metric-policy-target"><div class="metric-policy-target-main"><small>当前设备</small><strong id="metricPolicyDeviceName">-</strong><code id="metricPolicyDeviceID">-</code></div><span id="metricPolicyDeviceStatus" class="status-pill offline"><span class="status-dot"></span><span>离线</span></span></div>
+      <div class="metric-policy-head"><div><h3 id="metricPolicyTitle">指标卡片</h3><div class="metric-policy-head-copy">选择设备详情中显示并由 Agent 采集的卡片，至少保留 3 张。</div></div><span class="metric-policy-count"><b id="metricPolicyCount">6</b> / 6 已显示</span></div>
+      <div id="metricPolicyOptions" class="metric-policy-options"></div>
+      <div class="metric-policy-sync"><i></i><span id="metricPolicyStatus">设置按设备独立保存</span></div>
+    </section>
   </div>
 </div></div>
 
@@ -499,8 +576,11 @@ const $=s=>document.querySelector(s);
 let term=null, termWS=null, termFit=null, termResizeObserver=null, termResizeTimer=null, termFitFrame=null, termLastCols=0, termLastRows=0, termDrag=null, termRestoreRect=null, devices=[], settings={web_refresh_ms:5000,ui_result_ttl_ms:20000}, refreshTimer=null;
 let account=null, fileDeviceID='', currentFilePath='/';
 let deviceExpansionInitialized=false;
+let selectedMetricDeviceID='', metricPolicySaving=false, deviceDragState=null, deviceOrderSaving=false;
 const expandedDevices=new Set();
 const deviceResults={}; const resultTimers={};
+const metricCardKeys=['cpu','memory','disk','network','processes','diskio'];
+const metricCardLabels={cpu:'CPU 与温度',memory:'内存',disk:'存储',network:'网络吞吐',processes:'进程 / 任务',diskio:'磁盘 I/O'};
 const themeMedia=window.matchMedia('(prefers-color-scheme: dark)');
 function escapeHTML(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function currentThemeMode(){return document.documentElement.dataset.theme||'system'}
@@ -517,15 +597,48 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobilePanel()})
 window.addEventListener('resize',()=>{if(window.innerWidth>700)closeMobilePanel()});
 function humanBytesIEC(n){if(n===0)return '0 B';if(!n)return '-';const u=['B','KiB','MiB','GiB','TiB'];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++}return n.toFixed(i?1:0)+' '+u[i]}
 function humanBytesSI(n){if(n===0)return '0 B';if(!n)return '-';const u=['B','kB','MB','GB','TB'];let i=0;while(n>=1000&&i<u.length-1){n/=1000;i++}return n.toFixed(i?1:0)+' '+u[i]}
+function humanRate(n){n=Number(n);if(!Number.isFinite(n)||n<=0)return '0 B/s';return `${humanBytesSI(n)}/s`}
 function humanUptime(s){s=Number(s);if(!Number.isFinite(s)||s<0)return '采集中';if(s<60)return '少于 1 分钟';const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);if(d)return `${d} 天${h?` ${h} 小时`:''}`;if(h)return `${h} 小时${m?` ${m} 分钟`:''}`;return `${m} 分钟`}
 function humanAgo(ts){if(!ts)return '从未';const sec=Math.max(0,Math.floor(Date.now()/1000-ts));if(sec<60)return `${sec} 秒前`;if(sec<3600)return `${Math.floor(sec/60)} 分钟前`;if(sec<86400)return `${Math.floor(sec/3600)} 小时前`;return `${Math.floor(sec/86400)} 天前`}
 function fmtDate(ts){return ts?new Date(ts*1000).toLocaleString():'-'}
 function clampPct(n){n=Number(n);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0}
 function pctText(n){return Number.isFinite(Number(n))&&Number(n)>=0?`${Number(n).toFixed(1)}%`:'采集中'}
 function progressToneClass(pct){const n=Number(pct);if(!Number.isFinite(n)||n<0)return 'idle';if(n>=80)return 'danger';if(n>=50)return 'warn';return 'safe'}
-function segmentedProgressHTML(pct,segments=50){const n=Number(pct);const valid=Number.isFinite(n)&&n>=0;const filled=valid?Math.round(clampPct(n)/100*segments):0;const tone=progressToneClass(pct);return `<div class="seg-progress tone-${tone}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${valid?clampPct(n).toFixed(1):0}" aria-label="${valid?pctText(n):'采集中'}">${Array.from({length:segments},(_,i)=>`<span class="seg-cell ${i<filled?'filled':''}"></span>`).join('')}</div>`}
+function segmentedProgressHTML(pct,segments=50,extraClass=''){const n=Number(pct);const valid=Number.isFinite(n)&&n>=0;const filled=valid?Math.round(clampPct(n)/100*segments):0;const tone=progressToneClass(pct);return `<div class="seg-progress tone-${tone} ${extraClass}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${valid?clampPct(n).toFixed(1):0}" aria-label="${valid?pctText(n):'采集中'}">${Array.from({length:segments},(_,i)=>`<span class="seg-cell ${i<filled?'filled':''}"></span>`).join('')}</div>`}
 function progressHTML(cls,label,pct,sub,sub2=''){return `<div class="metric ${cls}"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-value">${pctText(pct)}</span></div>${segmentedProgressHTML(pct)}<div class="metric-sub">${escapeHTML(sub)}</div>${sub2?`<div class="metric-sub secondary">${escapeHTML(sub2)}</div>`:''}</div>`}
 function detailHTML(label,value,size='half'){return `<div class="detail ${size}"><div class="detail-label">${label}</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div></div>`}
+function metricCardsFor(d){const cards=Array.isArray(d.metric_cards)?d.metric_cards.filter(key=>metricCardKeys.includes(key)):[];return cards.length>=3?cards:metricCardKeys}
+function throughputPct(current,linkBPS,peak){current=Number(current)||0;linkBPS=Number(linkBPS)||0;peak=Number(peak)||0;if(linkBPS>0)return clampPct(current*8/linkBPS*100);if(peak>0)return clampPct(current/peak*100);return 0}
+function formatIOPS(value){value=Number(value)||0;if(value<=0)return '0';return value>=100?Math.round(value).toLocaleString():value.toFixed(value>=10?1:2)}
+function renderMetricCard(key,d,info){
+  const live=d.online?info:{};
+  if(key==='cpu'){
+    const pct=d.online?Number(live.cpu_usage):0;
+    const temp=d.online&&Number.isFinite(Number(live.cpu_temp_c))?`<span class="metric-temp">${Number(live.cpu_temp_c).toFixed(1)}°C</span>`:'';
+    return `<div class="metric cpu" data-card-key="cpu"><div class="metric-top"><div><div class="metric-label">CPU</div><div class="metric-value">${pctText(pct)}</div></div>${temp}</div><div class="metric-sub">${escapeHTML(`${info.cpu_cores||'?'} 核 · Load ${d.online?(live.load1||'采集中'):'0'}`)}</div>${segmentedProgressHTML(pct)}</div>`;
+  }
+  if(key==='memory'){
+    const total=Number(live.mem_total)||0,used=Math.max(0,total-(Number(live.mem_available)||0)),pct=total?used/total*100:0;
+    return `<div class="metric mem" data-card-key="memory"><div class="metric-top"><div><div class="metric-label">内存</div><div class="metric-value">${pctText(pct)}</div></div></div><div class="metric-sub">${humanBytesIEC(used)} / ${humanBytesIEC(total)}</div>${segmentedProgressHTML(pct)}</div>`;
+  }
+  if(key==='disk'){
+    const total=Number(live.disk_total)||0,used=Math.max(0,total-(Number(live.disk_free)||0)),pct=total?used/total*100:0;
+    const physical=Number(live.disk_physical_total)||0,physicalText=physical?`物理容量 ${humanBytesSI(physical)}${live.disk_physical_count?` · ${live.disk_physical_count} 块`:''}`:'物理容量 0 B';
+    return `<div class="metric disk" data-card-key="disk"><div class="metric-top"><div><div class="metric-label">存储</div><div class="metric-value">${pctText(pct)}</div></div></div><div class="metric-sub">${humanBytesSI(used)} / ${humanBytesSI(total)}</div><div class="metric-sub secondary">${escapeHTML(physicalText)}</div>${segmentedProgressHTML(pct)}</div>`;
+  }
+  if(key==='network'){
+    const rx=Number(live.net_rx_bps)||0,tx=Number(live.net_tx_bps)||0,rxPeak=Number(live.net_rx_peak_5m_bps)||0,txPeak=Number(live.net_tx_peak_5m_bps)||0,link=Number(live.net_link_bps)||0;
+    const caption=d.online?(live.net_interface?escapeHTML(live.net_interface):'默认路由'):'已归零';
+    return `<div class="metric network" data-card-key="network"><div class="metric-top"><div class="metric-label">网络吞吐</div><span class="metric-caption">${caption}</span></div><div class="flow-lines"><div class="flow"><div class="flow-head"><span class="down">下载</span><b>${humanRate(rx)}</b></div>${segmentedProgressHTML(throughputPct(rx,link,rxPeak),50,'compact')}<div class="flow-peak">5 分钟峰值 ${humanRate(rxPeak)}</div></div><div class="flow"><div class="flow-head"><span class="up">上传</span><b>${humanRate(tx)}</b></div>${segmentedProgressHTML(throughputPct(tx,link,txPeak),50,'compact')}<div class="flow-peak">5 分钟峰值 ${humanRate(txPeak)}</div></div></div></div>`;
+  }
+  if(key==='processes'){
+    const total=Number(live.process_total)||0,running=Number(live.process_running)||0,sleeping=Number(live.process_sleeping)||0,zombie=Number(live.process_zombie)||0;
+    return `<div class="metric processes" data-card-key="processes"><div class="metric-top"><div><div class="metric-label">进程 / 任务</div><div class="metric-value">${total.toLocaleString()}</div></div><span class="metric-caption">60 秒采样</span></div><div class="process-grid"><span><b>${running.toLocaleString()}</b>运行</span><span><b>${sleeping.toLocaleString()}</b>睡眠</span><span class="zombie ${zombie>0?'active':''}"><b>${zombie.toLocaleString()}</b>僵尸</span></div></div>`;
+  }
+  const read=Number(live.disk_read_bps)||0,write=Number(live.disk_write_bps)||0,iops=Number(live.disk_iops)||0,wait=Number(live.disk_io_wait_pct)||0,latency=Number(live.disk_latency_ms)||0;
+  return `<div class="metric io" data-card-key="diskio"><div class="metric-top"><div><div class="metric-label">磁盘 I/O</div><div class="metric-value">${formatIOPS(iops)} IOPS</div></div></div><div class="io-grid"><span>读取<b>${humanRate(read)}</b></span><span>写入<b>${humanRate(write)}</b></span><span>I/O Wait<b>${wait.toFixed(1)}%</b></span><span>估算延迟<b>${latency.toFixed(1)} ms</b></span></div></div>`;
+}
+function ipDetailHTML(addresses,idx){const value=addresses.join(', ')||'-';return `<div class="detail third ip-detail"><div class="detail-label">IP 地址</div><div class="detail-value" title="${escapeHTML(value)}">${escapeHTML(value)}</div><button class="copy-ip" onclick="copyDeviceIP(${idx},this)" title="复制 IP 地址" aria-label="复制 IP 地址" ${addresses.length?'':'disabled'}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button></div>`}
 function closeModal(id){$('#'+id).classList.add('hidden');if(id==='accountModal')clearAccountSecrets()}
 function clearAccountSecrets(){
   ['accountUsernamePassword','currentPassword','newPassword','totpPassword','totpEnableCode','totpDisableCode'].forEach(id=>{const el=$('#'+id);if(el)el.value=''});
@@ -552,34 +665,70 @@ async function initApp(){settings=await api('/api/settings');expandedDevices.cle
 function resultHTML(d,idx){const r=deviceResults[d.id];if(!r)return '';return `<div class="result ${r.error?'error':''}"><button class="result-close" onclick="closeResult('${d.id}')">✕</button><pre>${escapeHTML(r.text)}</pre></div>`}
 function setResult(id,text,error=false){deviceResults[id]={text,error};if(resultTimers[id])clearTimeout(resultTimers[id]);const ttl=settings.ui_result_ttl_ms||0;if(ttl>0)resultTimers[id]=setTimeout(()=>window.closeResult(id),ttl);renderDevices()}
 window.closeResult=id=>{delete deviceResults[id];if(resultTimers[id]){clearTimeout(resultTimers[id]);delete resultTimers[id]}renderDevices()}
-async function loadDevices(){try{devices=await api('/api/devices');if(!deviceExpansionInitialized){if(devices[0])expandedDevices.add(devices[0].id);deviceExpansionInitialized=true}for(const id of [...expandedDevices]){if(!devices.some(d=>d.id===id))expandedDevices.delete(id)}renderDevices()}catch(e){if(e.message!=='unauthorized')console.error(e)}}
+async function loadDevices(){if(deviceDragState)return;try{devices=await api('/api/devices');if(!deviceExpansionInitialized){if(devices[0])expandedDevices.add(devices[0].id);deviceExpansionInitialized=true}for(const id of [...expandedDevices]){if(!devices.some(d=>d.id===id))expandedDevices.delete(id)}renderDevices()}catch(e){if(e.message!=='unauthorized')console.error(e)}}
 function renderDevices(){
   const root=$('#devices');
   if(!devices.length){root.innerHTML='<div class="card muted">暂无设备。打开右上角“设备管理”添加第一台设备。</div>';return}
   root.innerHTML=devices.map((d,idx)=>{
     const i=d.info||{};
-    const memUsed=Math.max(0,(i.mem_total||0)-(i.mem_available||0));
-    const diskUsed=Math.max(0,(i.disk_total||0)-(i.disk_free||0));
-    const memPct=i.mem_total?memUsed/i.mem_total*100:0;
-    const diskPct=i.disk_total?diskUsed/i.disk_total*100:0;
-    const cpuPct=Number(i.cpu_usage);
     const status=d.online?'<span class="status-pill online" aria-label="设备在线"><span class="status-dot"></span>在线</span>':'<span class="status-pill offline" aria-label="设备离线"><span class="status-dot"></span>离线</span>';
     const uptimeText=humanUptime(i.uptime_sec);
     const uptime=d.online?`<span class="uptime-chip" title="Agent 所在设备的系统已运行时间" aria-label="系统已运行 ${escapeHTML(uptimeText)}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>运行 ${escapeHTML(uptimeText)}</span>`:'';
-    const cpuSub=`${i.cpu_cores||'?'} 核 · Load ${i.load1||'-'}`;
-    const diskPhysical=i.disk_physical_total?`物理容量 ${humanBytesSI(i.disk_physical_total)}${i.disk_physical_count?` · ${i.disk_physical_count} 块`:''}`:'';
-    const metrics=progressHTML('cpu','CPU',cpuPct,cpuSub)+progressHTML('mem','内存',memPct,`${humanBytesIEC(memUsed)} / ${humanBytesIEC(i.mem_total)}`)+progressHTML('disk','存储',diskPct,`文件系统 ${humanBytesSI(diskUsed)} / ${humanBytesSI(i.disk_total)}`,diskPhysical);
+    const metrics=metricCardsFor(d).map(key=>renderMetricCard(key,d,i)).join('');
+    const addresses=Array.isArray(i.ip_addrs)?i.ip_addrs:[];
     const details=[
       detailHTML('主机名',i.hostname||'-'),detailHTML('系统',i.os||'-'),
       detailHTML('架构',i.arch||'-'),detailHTML('Kernel',i.kernel||'-'),
       detailHTML('CPU 型号',i.cpu_model||'-'),detailHTML('CPU 核心',`${i.cpu_cores||'?'} 核`),
-      detailHTML('IP',(i.ip_addrs||[]).join(', ')||'-','third'),detailHTML('Agent',i.agent_version||'-','third'),detailHTML('最后心跳',humanAgo(d.last_seen),'third')
+      ipDetailHTML(addresses,idx),detailHTML('Agent 版本',i.agent_version||'-','third'),detailHTML('最后心跳',humanAgo(d.last_seen),'third')
     ].join('');
     const actions=`<div class="actions">${settings.allow_exec?`<button ${d.online?'':'disabled'} onclick="runCmd(${idx})">执行命令</button>`:''}${settings.allow_terminal?`<button ${d.online?'':'disabled'} onclick="openTerminal(${idx})">终端</button>`:''}${settings.file_browser_enabled?`<button ${d.online?'':'disabled'} onclick="openFiles(${idx})">文件</button>`:''}<button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'reboot')">重启</button><button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'poweroff')">关机</button></div>`;
-    const expanded=expandedDevices.has(d.id);return `<div class="card device-card"><div class="device-head"><div class="device-head-main"><div class="device-title"><h3>${escapeHTML(d.name||d.id)}</h3><div class="status-cluster">${status}${uptime}</div></div><div class="device-id">${escapeHTML(d.id)}</div></div><button class="disclosure-btn" onclick="toggleDeviceCard(${idx})" title="${expanded?'收起设备详情':'查看设备详情'}" aria-label="${expanded?'收起设备详情':'查看设备详情'}" aria-expanded="${expanded}"><span>${expanded?'收起':'详情'}</span><svg class="${expanded?'rotated':''}" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div><div class="device-body ${expanded?'':'hidden'}"><div class="metrics">${metrics}</div><div class="details">${details}</div>${actions}${resultHTML(d,idx)}</div></div>`;
+    const expanded=expandedDevices.has(d.id);return `<div class="card device-card" data-device-id="${escapeHTML(d.id)}"><div class="device-head"><button class="drag-handle" type="button" title="按住并拖动排序" aria-label="拖动调整 ${escapeHTML(d.name||d.id)} 顺序">⠿</button><div class="device-head-main"><div class="device-title"><h3>${escapeHTML(d.name||d.id)}</h3><div class="status-cluster">${status}${uptime}</div></div><div class="device-id">${escapeHTML(d.id)}</div></div><button class="disclosure-btn" onclick="toggleDeviceCard(${idx})" title="${expanded?'收起设备详情':'查看设备详情'}" aria-label="${expanded?'收起设备详情':'查看设备详情'}" aria-expanded="${expanded}"><span>${expanded?'收起':'详情'}</span><svg class="${expanded?'rotated':''}" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div><div class="device-body ${expanded?'':'hidden'}"><div class="metrics">${metrics}</div><div class="details">${details}</div>${actions}${resultHTML(d,idx)}</div></div>`;
   }).join('');
+  bindDeviceDragHandles(root,'cards');
 }
 window.toggleDeviceCard=idx=>{const d=devices[idx];if(!d)return;if(expandedDevices.has(d.id))expandedDevices.delete(d.id);else expandedDevices.add(d.id);renderDevices()}
+window.copyDeviceIP=async(idx,button)=>{const value=(devices[idx]?.info?.ip_addrs||[]).join(', ');if(!value)return;try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);else{const input=document.createElement('textarea');input.value=value;input.style.position='fixed';input.style.opacity='0';document.body.appendChild(input);input.select();document.execCommand('copy');input.remove()}button?.classList.add('copied');button?.setAttribute('aria-label','IP 地址已复制');setTimeout(()=>{button?.classList.remove('copied');button?.setAttribute('aria-label','复制 IP 地址')},1300)}catch{alert('浏览器未允许访问剪贴板，请手动复制 IP 地址。')}}
+function bindDeviceDragHandles(scope,kind){scope.querySelectorAll('.drag-handle').forEach(handle=>handle.addEventListener('pointerdown',event=>startDeviceDrag(event,kind)))}
+function startDeviceDrag(event,kind){
+  if(deviceDragState||deviceOrderSaving||(event.button!==undefined&&event.button!==0))return;
+  const item=kind==='cards'?event.currentTarget.closest('.device-card'):event.currentTarget.closest('tr[data-device-id]');
+  const list=item?.parentElement;if(!item||!list)return;event.preventDefault();
+  const rect=item.getBoundingClientRect(),listRect=list.getBoundingClientRect(),originalNext=item.nextSibling;
+  let slot;if(kind==='cards'){slot=document.createElement('div');slot.className='device-drop-slot';slot.style.height=`${rect.height}px`}else{slot=document.createElement('tr');slot.className='manager-drop-row';slot.innerHTML='<td colspan="6"></td>';slot.firstElementChild.style.height=`${rect.height}px`}
+  item.before(slot);item.classList.add('drag-source');
+  const ghost=document.createElement('div');ghost.className='drag-ghost';ghost.style.width=`${Math.min(rect.width,Math.max(240,Math.min(520,window.innerWidth-24)))}px`;ghost.style.left=`${rect.left}px`;ghost.style.top=`${rect.top}px`;ghost.innerHTML=`<span class="dots">⠿</span><strong>${escapeHTML(devices.find(d=>d.id===item.dataset.deviceId)?.name||item.dataset.deviceId)}</strong><small>移动中</small>`;document.body.appendChild(ghost);
+  const ghostRect=ghost.getBoundingClientRect();ghost.style.left=`${Math.max(listRect.left,Math.min(rect.left,listRect.right-ghostRect.width))}px`;
+  deviceDragState={item,list,slot,ghost,kind,originalNext,pointerId:event.pointerId,inside:true,offsetX:Math.min(ghostRect.width/2,event.clientX-rect.left),offsetY:Math.min(ghostRect.height/2,event.clientY-rect.top),ghostWidth:ghostRect.width,ghostHeight:ghostRect.height};
+  window.addEventListener('pointermove',moveDeviceDrag,{passive:false});window.addEventListener('pointerup',finishDeviceDrag);window.addEventListener('pointercancel',cancelDeviceDrag);
+}
+function moveDeviceDrag(event){
+  const state=deviceDragState;if(!state||event.pointerId!==state.pointerId)return;event.preventDefault();
+  const rect=state.list.getBoundingClientRect();state.inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
+  const maxLeft=Math.max(rect.left,rect.right-state.ghostWidth),maxTop=Math.max(rect.top,rect.bottom-state.ghostHeight);
+  state.ghost.style.left=`${Math.max(rect.left,Math.min(event.clientX-state.offsetX,maxLeft))}px`;state.ghost.style.top=`${Math.max(rect.top,Math.min(event.clientY-state.offsetY,maxTop))}px`;
+  if(!state.inside)return;
+  const selector=state.kind==='cards'?':scope > .device-card':':scope > tr[data-device-id]';
+  const targets=[...state.list.querySelectorAll(selector)].filter(target=>target!==state.item);
+  const next=targets.find(target=>{const targetRect=target.getBoundingClientRect();return event.clientY<targetRect.top+targetRect.height/2});
+  state.list.insertBefore(state.slot,next||null);
+}
+function finishDeviceDrag(event){endDeviceDrag(event,false)}
+function cancelDeviceDrag(event){endDeviceDrag(event,true)}
+function endDeviceDrag(event,cancelled){
+  const state=deviceDragState;if(!state||event.pointerId!==state.pointerId)return;
+  window.removeEventListener('pointermove',moveDeviceDrag);window.removeEventListener('pointerup',finishDeviceDrag);window.removeEventListener('pointercancel',cancelDeviceDrag);
+  const shouldDrop=!cancelled&&state.inside;if(shouldDrop)state.list.insertBefore(state.item,state.slot);else if(state.originalNext?.parentElement===state.list)state.list.insertBefore(state.item,state.originalNext);else state.list.appendChild(state.item);
+  state.item.classList.remove('drag-source');state.slot.remove();state.ghost.remove();
+  const ids=[...state.list.querySelectorAll(':scope > [data-device-id]')].map(item=>item.dataset.deviceId);deviceDragState=null;
+  if(shouldDrop)persistDeviceOrder(ids);
+}
+async function persistDeviceOrder(ids){
+  const previous=devices.slice(),byID=new Map(devices.map(device=>[device.id,device]));if(ids.length!==devices.length||ids.some(id=>!byID.has(id)))return;
+  const changed=ids.some((id,index)=>id!==devices[index]?.id);if(!changed){renderDevices();if(!$('#deviceManagerModal').classList.contains('hidden'))renderDeviceManager();return}
+  devices=ids.map(id=>byID.get(id));deviceOrderSaving=true;renderDevices();if(!$('#deviceManagerModal').classList.contains('hidden'))renderDeviceManager();
+  try{await api('/api/devices/order',{method:'PUT',body:JSON.stringify({device_ids:ids})});$('#deviceManageMsg').textContent='设备顺序已保存。'}catch(e){devices=previous;renderDevices();if(!$('#deviceManagerModal').classList.contains('hidden'))renderDeviceManager();$('#deviceManageMsg').textContent=`排序保存失败：${e.message}`}finally{deviceOrderSaving=false}
+}
 window.runCmd=async idx=>{const d=devices[idx];if(!d)return;const cmd=prompt('输入要以 root 执行的命令');if(!cmd)return;setResult(d.id,`$ ${cmd}\n\n执行中…`);const started=performance.now();try{const r=await api(`/api/device/${encodeURIComponent(d.id)}/exec`,{method:'POST',body:JSON.stringify({command:cmd})});const elapsed=((performance.now()-started)/1000).toFixed(2);let text=`$ ${cmd}\n\n${r.data||'(无输出)'}`;if(r.error)text+=`\n\n执行失败 · 退出码 ${r.exit_code ?? -1} · ${elapsed}s\n${r.error}`;else text+=`\n\n执行完成 · 退出码 ${r.exit_code||0} · ${elapsed}s`;setResult(d.id,text,!!r.error)}catch(e){setResult(d.id,`$ ${cmd}\n\n请求失败\n${e.message}`,true)}}
 window.action=async(idx,act)=>{const d=devices[idx];if(!d)return;const label=act==='reboot'?'重启':'关机';if(!confirm(`确认${label} ${d.name||d.id}？`))return;setResult(d.id,`正在发送${label}命令…`);try{await api(`/api/device/${encodeURIComponent(d.id)}/action`,{method:'POST',body:JSON.stringify({action:act})});setResult(d.id,`${label}命令已被 Agent 接受。\n等待设备停止心跳后会自动显示离线。`);setTimeout(loadDevices,1000)}catch(e){setResult(d.id,`${label}命令发送失败：${e.message}`,true)}}
 function scheduleTerminalResize(){
@@ -739,11 +888,36 @@ window.changePassword=async()=>{try{await api('/api/account/password',{method:'P
 window.setupTOTP=async()=>{const password=$('#totpPassword').value;if(!password){$('#accountMsg').textContent='请在两步验证区域输入当前密码。';return}try{const r=await api('/api/account/totp/setup',{method:'POST',body:JSON.stringify({current_password:password})});$('#totpPassword').value='';$('#totpSecret').textContent=r.secret;$('#totpURI').textContent=r.otpauth_uri;$('#totpSetup').classList.remove('hidden');$('#accountMsg').textContent=''}catch(e){$('#accountMsg').textContent=e.message}}
 window.enableTOTP=async()=>{const password=$('#totpPassword').value;const code=$('#totpEnableCode').value.trim();if(!password){$('#accountMsg').textContent='请重新输入当前密码后启用两步验证。';return}if(!/^\d{6}$/.test(code)){$('#accountMsg').textContent='请输入 6 位验证码。';return}try{await api('/api/account/totp/enable',{method:'POST',body:JSON.stringify({current_password:password,code})});showLogin('两步验证已启用，请重新登录。')}catch(e){$('#accountMsg').textContent=e.message}}
 window.disableTOTP=async()=>{const password=$('#totpPassword').value;if(!password){$('#accountMsg').textContent='请在两步验证区域输入当前密码。';return}try{await api('/api/account/totp/disable',{method:'POST',body:JSON.stringify({current_password:password,code:$('#totpDisableCode').value})});showLogin('两步验证已关闭，请重新登录。')}catch(e){$('#accountMsg').textContent=e.message}}
-window.openDeviceManager=async()=>{$('#deviceManageMsg').textContent='';$('#enrollPanel').classList.add('hidden');$('#enrollResult').classList.add('hidden');$('#enrollLabel').value='';$('#deviceManagerModal').classList.remove('hidden');await loadDevices();renderDeviceManager()}
+window.openDeviceManager=async()=>{$('#deviceManageMsg').textContent='';$('#enrollPanel').classList.add('hidden');$('#enrollResult').classList.add('hidden');$('#enrollLabel').value='';$('#deviceManagerModal').classList.remove('hidden');await loadDevices();if(!devices.some(d=>d.id===selectedMetricDeviceID))selectedMetricDeviceID=devices[0]?.id||'';renderDeviceManager()}
 window.toggleEnrollPanel=()=>{$('#enrollPanel').classList.toggle('hidden');$('#enrollResult').classList.add('hidden')}
-function renderDeviceManager(){const root=$('#deviceManageRows');if(!root)return;const drafts={};root.querySelectorAll('input[data-device-id]').forEach(el=>drafts[el.dataset.deviceId]=el.value);if(!devices.length){root.innerHTML='<tr><td colspan="5" class="muted">暂无设备。</td></tr>';return}root.innerHTML=devices.map((d,idx)=>`<tr><td><input id="manage-name-${idx}" data-device-id="${escapeHTML(d.id)}" value="${escapeHTML(drafts[d.id]??d.name??d.id)}" maxlength="128"></td><td>${d.online?'<span class="status-pill online"><span class="status-dot"></span>在线</span>':'<span class="status-pill offline"><span class="status-dot"></span>离线</span>'}</td><td><div class="manage-id">${escapeHTML(d.id)}</div></td><td>${humanAgo(d.last_seen)}</td><td class="manage-actions"><button class="small" onclick="saveDeviceName(${idx})">保存</button><button class="small danger" onclick="deleteManagedDevice(${idx})">删除</button></td></tr>`).join('')}
+function renderDeviceManager(){
+  const root=$('#deviceManageRows');if(!root)return;
+  const drafts={};root.querySelectorAll('input[data-device-id]').forEach(el=>drafts[el.dataset.deviceId]=el.value);
+  if(!devices.length){root.innerHTML='<tr><td colspan="6" class="muted">暂无设备。</td></tr>';selectedMetricDeviceID='';$('#metricPolicyPanel').classList.add('hidden');return}
+  if(!devices.some(d=>d.id===selectedMetricDeviceID))selectedMetricDeviceID=devices[0].id;
+  root.innerHTML=devices.map((d,idx)=>`<tr data-device-id="${escapeHTML(d.id)}" class="${d.id===selectedMetricDeviceID?'policy-selected':''}"><td class="handle-cell"><button class="drag-handle" type="button" title="按住并拖动排序" aria-label="拖动调整 ${escapeHTML(d.name||d.id)} 顺序">⠿</button></td><td><input id="manage-name-${idx}" data-device-id="${escapeHTML(d.id)}" value="${escapeHTML(drafts[d.id]??d.name??d.id)}" maxlength="128"></td><td>${d.online?'<span class="status-pill online"><span class="status-dot"></span>在线</span>':'<span class="status-pill offline"><span class="status-dot"></span>离线</span>'}</td><td><div class="manage-id">${escapeHTML(d.id)}</div></td><td>${humanAgo(d.last_seen)}</td><td class="manage-actions"><button class="small" onclick="saveDeviceName(${idx})">保存</button><button class="small" onclick="openMetricCards(${idx})" aria-pressed="${d.id===selectedMetricDeviceID}">指标卡片</button><button class="small danger" onclick="deleteManagedDevice(${idx})">删除</button></td></tr>`).join('');
+  bindDeviceDragHandles(root,'manager');renderMetricPolicy();
+}
+function renderMetricPolicy(message=''){
+  const panel=$('#metricPolicyPanel'),device=devices.find(d=>d.id===selectedMetricDeviceID);if(!panel)return;
+  if(!device){panel.classList.add('hidden');return}panel.classList.remove('hidden');
+  $('#metricPolicyDeviceName').textContent=device.name||device.id;$('#metricPolicyDeviceID').textContent=device.id;
+  const status=$('#metricPolicyDeviceStatus');status.classList.toggle('online',!!device.online);status.classList.toggle('offline',!device.online);status.querySelector('span:last-child').textContent=device.online?'在线':'离线';
+  const enabled=new Set(metricCardsFor(device));$('#metricPolicyCount').textContent=String(enabled.size);
+  $('#metricPolicyOptions').innerHTML=metricCardKeys.map(key=>`<label class="metric-policy-option ${enabled.has(key)?'':'disabled'}"><input type="checkbox" data-metric-key="${key}" ${enabled.has(key)?'checked':''} ${metricPolicySaving?'disabled':''} onchange="setMetricCard('${key}',this.checked)"><span class="metric-policy-option-text"><strong>${metricCardLabels[key]}</strong><small>${enabled.has(key)?'显示并采集':'不显示、不采集'}</small></span></label>`).join('');
+  $('#metricPolicyStatus').textContent=message||(device.online?'设置已保存 · 在线修改会立即同步':'设置已保存 · 设备上线后生效');
+}
+window.openMetricCards=idx=>{const device=devices[idx];if(!device)return;selectedMetricDeviceID=device.id;renderDeviceManager();requestAnimationFrame(()=>$('#metricPolicyPanel')?.scrollIntoView({behavior:'smooth',block:'nearest'}))}
+window.setMetricCard=async(key,enabled)=>{
+  if(metricPolicySaving||!metricCardKeys.includes(key))return;
+  const device=devices.find(d=>d.id===selectedMetricDeviceID);if(!device)return;
+  const previous=metricCardsFor(device),next=new Set(previous);if(enabled)next.add(key);else next.delete(key);
+  if(next.size<3){renderMetricPolicy('至少保留 3 张指标卡片。');return}
+  device.metric_cards=metricCardKeys.filter(card=>next.has(card));metricPolicySaving=true;renderDevices();renderMetricPolicy('正在保存并同步采集策略…');
+  try{const result=await api(`/api/device/${encodeURIComponent(device.id)}/metric-cards`,{method:'PUT',body:JSON.stringify({metric_cards:device.metric_cards})});device.metric_cards=result.metric_cards||device.metric_cards;metricPolicySaving=false;renderDevices();const message=result.applied_online?'已保存 · 在线 Agent 已立即同步':result.agent_online&&result.policy_supported===false?'已保存显示设置 · 请升级 Agent 以停止对应采集':'已保存 · 设备上线后生效';renderMetricPolicy(message)}catch(e){device.metric_cards=previous;metricPolicySaving=false;renderDevices();renderMetricPolicy(`保存失败：${e.message}`)}
+}
 window.saveDeviceName=async idx=>{const input=$(`#manage-name-${idx}`);if(!input)return;const id=input.dataset.deviceId;const name=input.value.trim();if(!name){$('#deviceManageMsg').textContent='设备名不能为空。';return}try{await api(`/api/device/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({name})});$('#deviceManageMsg').textContent='设备名称已保存。';await loadDevices();renderDeviceManager()}catch(e){$('#deviceManageMsg').textContent=e.message}}
-window.deleteManagedDevice=async idx=>{const input=$(`#manage-name-${idx}`);if(!input)return;const id=input.dataset.deviceId;const name=input.value.trim()||id;if(!confirm(`确定删除 ${name}？\n\n这会吊销该设备的长期 Device Token 并断开连接。重新添加时需要在 Agent 端清理 state.json 并使用新的 Enrollment Token。`))return;try{await api(`/api/device/${encodeURIComponent(id)}`,{method:'DELETE'});expandedDevices.delete(id);delete deviceResults[id];$('#deviceManageMsg').textContent='设备已删除。';await loadDevices();renderDeviceManager()}catch(e){$('#deviceManageMsg').textContent=e.message}}
+window.deleteManagedDevice=async idx=>{const input=$(`#manage-name-${idx}`);if(!input)return;const id=input.dataset.deviceId;const name=input.value.trim()||id;if(!confirm(`确定删除 ${name}？\n\n这会吊销该设备的长期 Device Token 并断开连接。重新添加时需要在 Agent 端清理 state.json 并使用新的 Enrollment Token。`))return;try{await api(`/api/device/${encodeURIComponent(id)}`,{method:'DELETE'});expandedDevices.delete(id);delete deviceResults[id];if(selectedMetricDeviceID===id)selectedMetricDeviceID='';$('#deviceManageMsg').textContent='设备已删除。';await loadDevices();renderDeviceManager()}catch(e){$('#deviceManageMsg').textContent=e.message}}
 window.createEnrollToken=async()=>{try{const r=await api('/api/enrollment-tokens',{method:'POST',body:JSON.stringify({label:$('#enrollLabel').value})});$('#enrollToken').textContent=r.token;$('#enrollExpiry').textContent=`有效期至 ${fmtDate(r.expires_at)}`;$('#enrollResult').classList.remove('hidden')}catch(e){$('#deviceManageMsg').textContent=e.message}}
 function pathJoin(base,name){return (base==='/'?'':base.replace(/\/$/,''))+'/'+name}
 window.openFiles=idx=>{const d=devices[idx];if(!d)return;fileDeviceID=d.id;currentFilePath='/';$('#fileTitle').textContent=`文件 · ${d.name||d.id}`;$('#fileModal').classList.remove('hidden');window.loadFiles('/')}
@@ -756,6 +930,9 @@ window.newFolder=async()=>{const name=prompt('新目录名称');if(!name)return;
 window.renameFile=async i=>{const e=(window.currentFileEntries||[])[i];if(!e)return;const name=prompt('新名称',e.name);if(!name||name===e.name)return;try{await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files/rename`,{method:'POST',body:JSON.stringify({path:e.path,target:pathJoin(currentFilePath,name)})});await window.loadFiles(currentFilePath)}catch(err){$('#fileMsg').textContent=err.message}}
 window.deleteFile=async i=>{const e=(window.currentFileEntries||[])[i];if(!e||!confirm(`删除 ${e.name}？\n目录必须为空。`))return;try{await api(`/api/device/${encodeURIComponent(fileDeviceID)}/files/delete`,{method:'POST',body:JSON.stringify({path:e.path})});await window.loadFiles(currentFilePath)}catch(err){$('#fileMsg').textContent=err.message}}
 window.uploadSelectedFile=async input=>{const f=input.files?.[0];if(!f)return;$('#fileMsg').textContent=`正在上传 ${f.name}…`;try{const path=pathJoin(currentFilePath,f.name);const r=await fetch(`/api/device/${encodeURIComponent(fileDeviceID)}/files/upload?path=${encodeURIComponent(path)}`,{method:'POST',headers:{'X-HomeCTL-Request':'1'},body:f});const text=await r.text();if(r.status===401){showLogin();throw new Error('unauthorized')}if(!r.ok)throw new Error(text.trim()||r.statusText);$('#fileMsg').textContent=`上传完成：${f.name}`;await window.loadFiles(currentFilePath)}catch(e){$('#fileMsg').textContent=e.message}finally{input.value=''}}
+function resetExpandedDevicesAfterSuspend(){if(deviceDragState)return;expandedDevices.clear();if(devices[0])expandedDevices.add(devices[0].id);deviceExpansionInitialized=true;if(devices.length&&!$('#app').classList.contains('hidden'))renderDevices()}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)resetExpandedDevicesAfterSuspend()});
+window.addEventListener('pagehide',resetExpandedDevicesAfterSuspend);
 restoreRememberedUsername();
 $('#password').addEventListener('keydown',e=>{if(e.key==='Enter')window.login()});
 $('#username').addEventListener('keydown',e=>{if(e.key==='Enter')$('#password').focus()});

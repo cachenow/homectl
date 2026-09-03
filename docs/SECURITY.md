@@ -109,7 +109,6 @@ HomeCTL 默认使用 TCP 对端 IP 做密码失败隔离。位于可信反向代
 - Server 只保存 SHA-256 摘要
 - 默认 30 分钟有效
 - 成功绑定设备后立即消费
-- 同时填写的“首次显示名称”只用于创建该设备记录，保留原始大小写；后续 heartbeat 不会覆盖已保存名称
 
 Agent 在首次绑定前本地生成自己的高熵 Device Token 并先写入 `state.json`。Enrollment Token 只授权这个 Device ID 与 Device Token 的首次绑定；Server 在同一个 SQLite transaction 中完成“消费 Enrollment Token + 创建设备凭据”。
 
@@ -139,9 +138,7 @@ Agent 使用 Go `os.Root` 执行 root-relative 文件访问。浏览、下载、
 
 单条命令输出从写入阶段就受 `max_command_output_bytes` 限制，超出部分不继续缓存在 Agent 内存中。命令超时会终止该命令的进程组，减少后台子进程在超时后继续存活的情况。
 
-Terminal 是独立 PTY，会按照浏览器终端窗口的实际行列数运行。窗口拖动期间只在浏览器本地逐帧适配，稳定后才发送远端尺寸；Server 与 Agent 都会过滤非法或重复 Resize，避免不必要的连续 `SIGWINCH`。
-
-xterm.js、FitAddon 和样式文件以固定版本随 Server 二进制本地嵌入，浏览器不会向第三方 CDN 请求 Terminal 代码。Web CSP 的脚本和样式来源因此只允许 `'self'` 与当前页面所需的内联代码。
+Terminal 是独立 PTY，会按照浏览器终端窗口的实际行列数运行。
 
 Agent 对命令、PTY 和文件操作设置固定并发上限；PTY 输入使用有界队列。新 Server/Agent 还会协商上传和下载信用窗口，使慢磁盘、慢浏览器或大文件不会在内存中形成无界队列，也不会让文件写入长期阻塞 WebSocket 读取循环。协议能力按连接协商，滚动升级期间可与不支持信用窗口的旧端继续通信。
 

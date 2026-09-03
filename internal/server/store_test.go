@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"homectl/internal/protocol"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -242,7 +244,7 @@ func TestFutureSchemaIsRejectedWithoutMutation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(`CREATE TABLE sentinel(value TEXT NOT NULL); INSERT INTO sentinel(value) VALUES('keep'); PRAGMA user_version=2`); err != nil {
+	if _, err := db.Exec(`CREATE TABLE sentinel(value TEXT NOT NULL); INSERT INTO sentinel(value) VALUES('keep'); PRAGMA user_version=3`); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Close(); err != nil {
@@ -279,6 +281,108 @@ func TestFutureSchemaIsRejectedWithoutMutation(t *testing.T) {
 	var created int
 	if err := db.QueryRow(`SELECT count(*) FROM sqlite_master WHERE type='table' AND name='devices'`).Scan(&created); err != nil || created != 0 {
 		t.Fatalf("unexpected schema object count=%d err=%v", created, err)
+	}
+}
+
+func TestDeviceOrderIsExplicitAndUnaffectedByRename(t *testing.T) {
+	s, err := OpenStore(filepath.Join(t.TempDir(), "homectl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	for _, device := range []*DeviceRecord{
+		{ID: "device-b", Name: "Beta", TokenHash: hashToken("token-b")},
+		{ID: "device-a", Name: "Alpha", TokenHash: hashToken("token-a")},
+	} {
+		if err := s.Put(device); err != nil {
+			t.Fatal(err)
+		}
+	}
+	list, err := s.List()
+	if err != nil || len(list) != 2 || list[0].ID != "device-b" || list[1].ID != "device-a" {
+		t.Fatalf("initial insertion order=%#v err=%v", list, err)
+	}
+	if err := s.UpdateDeviceName("device-b", "Zulu"); err != nil {
+		t.Fatal(err)
+	}
+	list, err = s.List()
+	if err != nil || list[0].ID != "device-b" {
+		t.Fatalf("rename changed order=%#v err=%v", list, err)
+	}
+	if err := s.ReorderDevices([]string{"device-a", "device-b"}); err != nil {
+		t.Fatal(err)
+	}
+	list, err = s.List()
+	if err != nil || list[0].ID != "device-a" || list[1].ID != "device-b" {
+		t.Fatalf("manual order=%#v err=%v", list, err)
+	}
+	if err := s.ReorderDevices([]string{"device-a", "device-a"}); err == nil {
+		t.Fatal("duplicate device order was accepted")
+	}
+}
+
+func TestDeviceMetricCardsPersistAndRequireThree(t *testing.T) {
+	s, err := OpenStore(filepath.Join(t.TempDir(), "homectl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	if err := s.Put(&DeviceRecord{ID: "device", Name: "Device", TokenHash: hashToken("token")}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.UpdateMetricCards("device", []string{protocol.MetricNetwork, protocol.MetricCPU, protocol.MetricMemory}); err != nil {
+		t.Fatal(err)
+	}
+	record, err := s.Get("device")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{protocol.MetricCPU, protocol.MetricMemory, protocol.MetricNetwork}
+	if record == nil || len(record.MetricCards) != len(want) {
+		t.Fatalf("metric cards=%#v", record)
+	}
+	for index := range want {
+		if record.MetricCards[index] != want[index] {
+			t.Fatalf("metric cards=%v want=%v", record.MetricCards, want)
+		}
+	}
+	if err := s.UpdateMetricCards("device", []string{protocol.MetricCPU, protocol.MetricMemory}); err == nil {
+		t.Fatal("fewer than three metric cards were accepted")
+	}
+}
+
+func TestVersionOneDeviceOrderMigrationPreservesPreviousDisplayOrder(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "homectl.db")
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`CREATE TABLE devices (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  token_hash BLOB NOT NULL,
+  last_seen INTEGER NOT NULL DEFAULT 0,
+  info_json TEXT NOT NULL DEFAULT ''
+);
+INSERT INTO devices(id,name,token_hash) VALUES('z','Zulu',x'01'),('a','Alpha',x'02');
+PRAGMA user_version=1`); err != nil {
+		db.Close()
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	s, err := OpenStore(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	list, err := s.List()
+	if err != nil || len(list) != 2 || list[0].ID != "a" || list[1].ID != "z" {
+		t.Fatalf("migrated order=%#v err=%v", list, err)
+	}
+	if len(list[0].MetricCards) != len(protocol.DefaultMetricCards()) {
+		t.Fatalf("migrated default metric cards=%v", list[0].MetricCards)
 	}
 }
 

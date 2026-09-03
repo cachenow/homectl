@@ -4,11 +4,7 @@ HomeCTL Server 可以通过 Docker Compose 运行，Agent 不需要 Docker。Clo
 
 推荐优先使用 Release 中的 Server 部署包；需要修改源码时再从源码仓库构建镜像。
 
-## 1. 选择一种部署来源
-
-下面 A、B 两个分支只执行一个。普通用户选择 A；只有需要修改源码时才选择 B。完成所选分支后直接继续第 2 步，不要再执行另一个分支。
-
-### A. Release 部署包（推荐）
+## 1. 使用 Release 部署包（推荐）
 
 Release 中选择：
 
@@ -39,7 +35,7 @@ chmod 700 data
 
 `docker-compose.yml` 已指向对应 Release 的 GHCR 镜像，不需要本机 Go 编译环境。
 
-### B. 从源码仓库构建
+## 2. 从源码仓库构建
 
 如果你拿到的是完整源码仓库：
 
@@ -55,7 +51,7 @@ chmod 700 data
 
 > 源码部署请在**仓库根目录**运行 `docker compose`，不要只复制 `docker-compose.yml` 到一个空目录后执行 `--build`，因为构建上下文需要完整源码。
 
-## 2. 生成首次管理员密码
+## 3. 生成首次管理员密码
 
 推荐生成高熵随机密码：
 
@@ -69,7 +65,7 @@ openssl rand -hex 32
 od -An -N32 -tx1 /dev/urandom | tr -d ' \n'
 ```
 
-把生成结果写入当前部署目录的 `config.json`：Release 路线是 `/opt/homectl-server/config.json`，源码路线是仓库内的 `deploy/server/config.json`。
+把生成结果写入 `config.json`：
 
 ```json
 "admin_username": "admin",
@@ -78,9 +74,9 @@ od -An -N32 -tx1 /dev/urandom | tr -d ' \n'
 
 `admin_username` 和 `admin_password` 只在 SQLite 中尚未存在管理员时用于首次初始化。管理员创建成功后，后续认证完全以 SQLite 中的账户为准，可以把配置中的 `admin_password` 改成空字符串。
 
-## 3. 核对完整 Server 配置
+## 4. 完整 Server 配置示例
 
-两条部署路线提供的默认 `config.json` 都已经包含下列全部字段。应直接编辑现有文件，不要新建只有 `admin_username` 和 `admin_password` 的精简文件。Cloudflare Tunnel 场景的完整内容如下：
+Cloudflare Tunnel 场景示例：
 
 ```json
 {
@@ -127,9 +123,7 @@ od -An -N32 -tx1 /dev/urandom | tr -d ' \n'
 
 所有字段的用途、默认值和限制见 [CONFIGURATION.md](CONFIGURATION.md)。
 
-## 4. 核对 Compose 与可选 Tunnel
-
-部署包或仓库已经提供 Compose 文件；下面内容用于解释现有配置，不要求复制后再执行一次。
+## 5. 完整 Compose 示例
 
 ### Release 镜像
 
@@ -202,7 +196,7 @@ services:
 
 不使用 Cloudflare 时，删除整个 `cloudflared` service 即可。之后可以让 Caddy/Nginx 反代 `127.0.0.1:8080`，或者按可信 LAN 的需求调整监听地址。
 
-### Cloudflare Tunnel 设置（可选）
+## 6. Cloudflare Tunnel（可选）
 
 在 Cloudflare Dashboard 创建 remotely-managed Tunnel，把得到的 Tunnel Token 替换到 Compose 中。
 
@@ -220,7 +214,7 @@ panel.example.com
 
 `host` 网络替代方案、Cloudflare Access 和真实客户端 IP 设置见 [CLOUDFLARE.md](CLOUDFLARE.md)。
 
-## 5. 启动并检查健康状态
+## 7. 启动
 
 ### Release 部署包
 
@@ -229,7 +223,7 @@ cd /opt/homectl-server
 docker compose pull
 docker compose up -d
 docker compose ps
-docker compose logs --tail=100 homectl
+docker compose logs -f homectl
 ```
 
 ### 源码仓库
@@ -238,7 +232,7 @@ docker compose logs --tail=100 homectl
 cd /path/to/homectl
 docker compose up -d --build
 docker compose ps
-docker compose logs --tail=100 homectl
+docker compose logs -f homectl
 ```
 
 健康检查：
@@ -253,9 +247,7 @@ curl http://127.0.0.1:8080/healthz
 ok
 ```
 
-确认启动正常后，如需持续跟踪日志再执行 `docker compose logs -f homectl`，按 `Ctrl+C` 只会结束日志跟踪，不会停止容器。
-
-## 6. 首次登录并清理 bootstrap 密码
+## 8. 首次登录
 
 通过你配置的浏览器入口打开 HomeCTL，用首次 `admin_username` 和刚生成的密码登录。
 
@@ -271,7 +263,7 @@ ok
 docker compose restart homectl
 ```
 
-## 7. 添加 Agent
+## 9. 添加 Agent
 
 进入：
 
@@ -281,7 +273,7 @@ docker compose restart homectl
 
 然后按 [AGENT.md](AGENT.md) 安装 Agent。
 
-## 8. 更新
+## 10. 更新
 
 Release 镜像：
 

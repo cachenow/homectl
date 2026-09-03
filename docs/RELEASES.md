@@ -62,7 +62,7 @@ sha256sum -c SHA256SUMS
 `SHA256SUMS` 可能同时列出未下载的其他架构；只校验单个文件时可执行：
 
 ```bash
-grep 'homectl-agent-v1.0.0-linux-amd64.tar.gz$' SHA256SUMS | sha256sum -c -
+grep 'homectl-agent-v2.0.0-linux-amd64.tar.gz$' SHA256SUMS | sha256sum -c -
 ```
 
 安装前还可以核对版本：

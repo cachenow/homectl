@@ -145,6 +145,10 @@ type agent struct {
 	prevCPUTotal uint64
 	prevCPUIdle  uint64
 	cpuPrimed    bool
+
+	policyMu    sync.RWMutex
+	metricCards []string
+	telemetry   telemetryState
 }
 
 func main() {
@@ -289,6 +293,7 @@ func (a *agent) run() (time.Duration, error) {
 		Capabilities: []string{
 			protocol.CapabilityFileDownloadCredits,
 			protocol.CapabilityFileUploadCredits,
+			protocol.CapabilityMetricPolicy,
 		},
 	}); err != nil {
 		return 0, err
@@ -302,6 +307,9 @@ func (a *agent) run() (time.Duration, error) {
 	}
 	if ack.Type != "hello_ack" {
 		return 0, fmt.Errorf("unexpected handshake response")
+	}
+	if !a.setMetricCards(ack.MetricCards) {
+		return 0, fmt.Errorf("server returned an invalid metric policy")
 	}
 	if ack.DeviceToken != "" && !protocol.ValidDeviceToken(ack.DeviceToken) {
 		return 0, fmt.Errorf("server returned an invalid device token")
@@ -364,6 +372,10 @@ func (a *agent) run() (time.Duration, error) {
 			a.handleFileUploadEnd(c, m)
 		case "file_upload_abort":
 			a.handleFileUploadAbort(m)
+		case "metric_policy":
+			if !a.setMetricCards(m.MetricCards) {
+				log.Printf("ignored invalid metric policy from server")
+			}
 		}
 	}
 }
@@ -657,17 +669,49 @@ func (a *agent) closeTerms() {
 
 func (a *agent) collectInfo() protocol.SystemInfo {
 	host, _ := os.Hostname()
-	diskTotal, diskFree := a.diskUsage()
-	diskPhysicalTotal, diskPhysicalCount := physicalDiskCapacity()
-	memTotal, memAvail := memInfo()
-	return protocol.SystemInfo{
+	info := protocol.SystemInfo{
 		Hostname: host, OS: osRelease(), Kernel: unameR(), Arch: runtime.GOARCH,
-		CPUModel: cpuModel(), CPUCores: runtime.NumCPU(), CPUUsage: a.cpuUsage(), Load1: firstField(readFile("/proc/loadavg")),
-		MemTotal: memTotal, MemAvail: memAvail,
-		DiskTotal: diskTotal, DiskFree: diskFree,
-		DiskPhysicalTotal: diskPhysicalTotal, DiskPhysicalCount: diskPhysicalCount,
+		CPUModel: cpuModel(), CPUCores: runtime.NumCPU(),
 		UptimeSec: uptime(), IPAddrs: ipAddrs(), AgentVer: version, ReportedAt: time.Now().Unix(),
 	}
+	cards := a.metricCardsSnapshot()
+	if protocol.HasMetricCard(cards, protocol.MetricCPU) {
+		info.CPUUsage = a.cpuUsage()
+		info.Load1 = firstField(readFile("/proc/loadavg"))
+		info.CPUTempC = a.telemetry.cpuTemperature(time.Now(), "/sys/class/thermal", "/sys/class/hwmon")
+	}
+	if protocol.HasMetricCard(cards, protocol.MetricMemory) {
+		info.MemTotal, info.MemAvail = memInfo()
+	}
+	if protocol.HasMetricCard(cards, protocol.MetricDisk) {
+		info.DiskTotal, info.DiskFree = a.diskUsage()
+		info.DiskPhysicalTotal, info.DiskPhysicalCount = physicalDiskCapacity()
+	}
+	if protocol.HasMetricCard(cards, protocol.MetricNetwork) {
+		network := a.telemetry.network(time.Now(), "/proc/net/route", "/proc/net/dev", "/sys/class/net")
+		info.NetInterface = network.Interface
+		info.NetLinkBPS = network.LinkBPS
+		info.NetRXBPS = network.RXBPS
+		info.NetTXBPS = network.TXBPS
+		info.NetRXPeak5mBPS = network.RXPeakBPS
+		info.NetTXPeak5mBPS = network.TXPeakBPS
+	}
+	if protocol.HasMetricCard(cards, protocol.MetricProcesses) {
+		processes := a.telemetry.processes(time.Now(), "/proc")
+		info.ProcessTotal = processes.Total
+		info.ProcessRunning = processes.Running
+		info.ProcessSleeping = processes.Sleeping
+		info.ProcessZombie = processes.Zombie
+	}
+	if protocol.HasMetricCard(cards, protocol.MetricDiskIO) {
+		diskIO := a.telemetry.diskIO(time.Now(), "/proc/diskstats", "/proc/stat", "/sys/class/block")
+		info.DiskReadBPS = diskIO.ReadBPS
+		info.DiskWriteBPS = diskIO.WriteBPS
+		info.DiskIOPS = diskIO.IOPS
+		info.DiskIOWaitPct = diskIO.IOWaitPct
+		info.DiskLatencyMS = diskIO.LatencyMS
+	}
+	return info
 }
 
 func (a *agent) diskUsage() (uint64, uint64) {

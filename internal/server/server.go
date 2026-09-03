@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"net/netip"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -89,6 +88,7 @@ type AgentConn struct {
 	mu                  sync.Mutex
 	fileDownloadCredits bool
 	fileUploadCredits   bool
+	metricPolicy        bool
 	heartbeats          chan heartbeatUpdate
 	done                chan struct{}
 	stopOnce            sync.Once
@@ -127,11 +127,12 @@ const (
 )
 
 type deviceView struct {
-	ID       string               `json:"id"`
-	Name     string               `json:"name"`
-	LastSeen int64                `json:"last_seen"`
-	Info     *protocol.SystemInfo `json:"info,omitempty"`
-	Online   bool                 `json:"online"`
+	ID          string               `json:"id"`
+	Name        string               `json:"name"`
+	LastSeen    int64                `json:"last_seen"`
+	Info        *protocol.SystemInfo `json:"info,omitempty"`
+	Online      bool                 `json:"online"`
+	MetricCards []string             `json:"metric_cards"`
 }
 
 func New(cfg Config, store *Store) *Server {
@@ -167,7 +168,9 @@ func (s *Server) Handler(webFS http.FileSystem) http.Handler {
 	mux.Handle("POST /api/account/totp/disable", s.requireAuth(http.HandlerFunc(s.handleTOTPDisable)))
 	mux.Handle("POST /api/enrollment-tokens", s.requireAuth(http.HandlerFunc(s.handleCreateEnrollmentToken)))
 	mux.Handle("GET /api/devices", s.requireAuth(http.HandlerFunc(s.handleDevices)))
+	mux.Handle("PUT /api/devices/order", s.requireAuth(http.HandlerFunc(s.handleDeviceOrder)))
 	mux.Handle("PATCH /api/device/{id}", s.requireAuth(http.HandlerFunc(s.handleUpdateDevice)))
+	mux.Handle("PUT /api/device/{id}/metric-cards", s.requireAuth(http.HandlerFunc(s.handleMetricCards)))
 	mux.Handle("DELETE /api/device/{id}", s.requireAuth(http.HandlerFunc(s.handleDeleteDevice)))
 	mux.Handle("POST /api/device/{id}/action", s.requireAuth(http.HandlerFunc(s.handleAction)))
 	mux.Handle("POST /api/device/{id}/exec", s.requireAuth(http.HandlerFunc(s.handleExec)))
@@ -204,11 +207,6 @@ func securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			w.Header().Set("Cache-Control", "no-store")
-		} else if strings.HasPrefix(r.URL.Path, "/vendor/xterm/") &&
-			(strings.HasSuffix(r.URL.Path, ".mjs") || strings.HasSuffix(r.URL.Path, ".css")) {
-			// Runtime asset filenames include their package version, so they can be
-			// cached permanently without making upgrades serve stale code.
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -435,6 +433,7 @@ func (s *Server) handleAgentWS(w http.ResponseWriter, r *http.Request) {
 			_ = c.Close(websocket.StatusPolicyViolation, "enrollment denied")
 			return
 		}
+		rec.MetricCards = protocol.DefaultMetricCards()
 	} else if !protocol.ValidDeviceToken(hello.Token) || (hello.EnrollmentToken != "" && !protocol.ValidEnrollmentToken(hello.EnrollmentToken)) || !secureEqualBytes(hashToken(hello.Token), rec.TokenHash) {
 		_ = c.Close(websocket.StatusPolicyViolation, "authentication denied")
 		return
@@ -445,6 +444,7 @@ func (s *Server) handleAgentWS(w http.ResponseWriter, r *http.Request) {
 		conn:                c,
 		fileDownloadCredits: protocol.HasCapability(hello.Capabilities, protocol.CapabilityFileDownloadCredits),
 		fileUploadCredits:   protocol.HasCapability(hello.Capabilities, protocol.CapabilityFileUploadCredits),
+		metricPolicy:        protocol.HasCapability(hello.Capabilities, protocol.CapabilityMetricPolicy),
 		heartbeats:          make(chan heartbeatUpdate, 1),
 		done:                make(chan struct{}),
 	}
@@ -471,7 +471,7 @@ func (s *Server) handleAgentWS(w http.ResponseWriter, r *http.Request) {
 		agent.stop()
 	}()
 
-	ack := protocol.Message{Type: "hello_ack", DeviceToken: newToken}
+	ack := protocol.Message{Type: "hello_ack", DeviceToken: newToken, MetricCards: append([]string(nil), rec.MetricCards...)}
 	if agent.fileDownloadCredits {
 		ack.Capabilities = append(ack.Capabilities, protocol.CapabilityFileDownloadCredits)
 	}
@@ -638,10 +638,32 @@ func (s *Server) handleDevices(w http.ResponseWriter, _ *http.Request) {
 	}
 	out := make([]deviceView, 0, len(list))
 	for _, d := range list {
-		out = append(out, deviceView{ID: d.ID, Name: d.Name, LastSeen: d.LastSeen, Info: d.Info, Online: s.deviceOnline(d)})
+		online := s.deviceOnline(d)
+		info := d.Info
+		if !online {
+			info = protocol.ClearDynamicMetrics(info)
+		}
+		out = append(out, deviceView{
+			ID: d.ID, Name: d.Name, LastSeen: d.LastSeen, Info: info, Online: online,
+			MetricCards: append([]string(nil), d.MetricCards...),
+		})
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) handleDeviceOrder(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		DeviceIDs []string `json:"device_ids"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 64<<10)).Decode(&in); err != nil || len(in.DeviceIDs) == 0 {
+		http.Error(w, "invalid device order", http.StatusBadRequest)
+		return
+	}
+	if err := s.store.ReorderDevices(in.DeviceIDs); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 func (s *Server) handleUpdateDevice(w http.ResponseWriter, r *http.Request) {
@@ -677,6 +699,52 @@ func (s *Server) handleUpdateDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": id, "name": in.Name})
+}
+
+func (s *Server) handleMetricCards(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(r.PathValue("id"))
+	if id == "" {
+		http.Error(w, "invalid device", http.StatusBadRequest)
+		return
+	}
+	var in struct {
+		MetricCards []string `json:"metric_cards"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&in); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	cards, err := protocol.NormalizeMetricCards(in.MetricCards, 3)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := s.store.UpdateMetricCards(id, cards); err != nil {
+		if err.Error() == "device not found" {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+
+	applied := false
+	s.mu.RLock()
+	agent := s.agents[id]
+	s.mu.RUnlock()
+	agentOnline := agent != nil
+	policySupported := agentOnline && agent.metricPolicy
+	if policySupported {
+		if err := s.sendAgent(agent, protocol.Message{Type: "metric_policy", MetricCards: cards}); err == nil {
+			applied = true
+		} else {
+			log.Printf("send metric policy to %s: %v", id, err)
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok": true, "metric_cards": cards, "applied_online": applied,
+		"agent_online": agentOnline, "policy_supported": policySupported,
+	})
 }
 
 func (s *Server) handleDeleteDevice(w http.ResponseWriter, r *http.Request) {
@@ -916,7 +984,6 @@ func (s *Server) handleTerminalWS(w http.ResponseWriter, r *http.Request) {
 	if err := s.sendAgent(agent, protocol.Message{Type: "term_open", SessionID: sid, Cols: cols, Rows: rows}); err != nil {
 		return
 	}
-	lastCols, lastRows := cols, rows
 	for {
 		var in struct {
 			Type string `json:"type"`
@@ -929,23 +996,11 @@ func (s *Server) handleTerminalWS(w http.ResponseWriter, r *http.Request) {
 		}
 		switch in.Type {
 		case "input":
-			if err := s.sendAgent(agent, protocol.Message{Type: "term_input", SessionID: sid, Data: in.Data}); err != nil {
-				return
-			}
+			_ = s.sendAgent(agent, protocol.Message{Type: "term_input", SessionID: sid, Data: in.Data})
 		case "resize":
-			if !validTerminalSize(in.Cols, in.Rows) || in.Cols == lastCols && in.Rows == lastRows {
-				continue
-			}
-			if err := s.sendAgent(agent, protocol.Message{Type: "term_resize", SessionID: sid, Cols: in.Cols, Rows: in.Rows}); err != nil {
-				return
-			}
-			lastCols, lastRows = in.Cols, in.Rows
+			_ = s.sendAgent(agent, protocol.Message{Type: "term_resize", SessionID: sid, Cols: in.Cols, Rows: in.Rows})
 		}
 	}
-}
-
-func validTerminalSize(cols, rows uint16) bool {
-	return cols >= 8 && cols <= 1000 && rows >= 8 && rows <= 1000
 }
 
 func parseTerminalDimension(raw string, fallback uint16) uint16 {

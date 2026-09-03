@@ -86,26 +86,35 @@ func TestDeploymentConfigExampleLoads(t *testing.T) {
 	if _, err := loadAgentConfig(path); err != nil {
 		t.Fatalf("load %s: %v", path, err)
 	}
-	requireCompleteAgentJSONConfig(t, path, reflect.TypeOf(agentConfig{}))
 }
 
-func requireCompleteAgentJSONConfig(t *testing.T, path string, configType reflect.Type) {
-	t.Helper()
-	b, err := os.ReadFile(path)
+func TestDeploymentConfigExampleContainsEveryAgentOption(t *testing.T) {
+	path := filepath.Join("..", "..", "deploy", "agent", "config.example.json")
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var values map[string]json.RawMessage
-	if err := json.Unmarshal(b, &values); err != nil {
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(contents, &object); err != nil {
 		t.Fatal(err)
 	}
-	requireAgentJSONFields(t, path, values, configType)
+	assertConfigMapHasEveryTaggedField(t, path, object, reflect.TypeOf(agentConfig{}))
+	for key, typ := range map[string]reflect.Type{
+		"cloudflare_access": reflect.TypeOf(cloudflareAccessConfig{}),
+		"tls":               reflect.TypeOf(tlsConfig{}),
+	} {
+		var nested map[string]json.RawMessage
+		if err := json.Unmarshal(object[key], &nested); err != nil {
+			t.Fatalf("decode %s.%s: %v", path, key, err)
+		}
+		assertConfigMapHasEveryTaggedField(t, path+"."+key, nested, typ)
+	}
 }
 
-func requireAgentJSONFields(t *testing.T, path string, values map[string]json.RawMessage, configType reflect.Type) {
+func assertConfigMapHasEveryTaggedField(t *testing.T, path string, object map[string]json.RawMessage, typ reflect.Type) {
 	t.Helper()
-	for i := 0; i < configType.NumField(); i++ {
-		field := configType.Field(i)
+	for index := 0; index < typ.NumField(); index++ {
+		field := typ.Field(index)
 		if field.PkgPath != "" {
 			continue
 		}
@@ -113,18 +122,8 @@ func requireAgentJSONFields(t *testing.T, path string, values map[string]json.Ra
 		if name == "" || name == "-" {
 			continue
 		}
-		raw, ok := values[name]
-		if !ok {
-			t.Errorf("%s is missing configurable field %q", path, name)
-			continue
-		}
-		if field.Type.Kind() == reflect.Struct {
-			var nested map[string]json.RawMessage
-			if err := json.Unmarshal(raw, &nested); err != nil {
-				t.Errorf("%s field %q is not an object: %v", path, name, err)
-				continue
-			}
-			requireAgentJSONFields(t, path+"."+name, nested, field.Type)
+		if _, ok := object[name]; !ok {
+			t.Errorf("%s omits configurable field %q", path, name)
 		}
 	}
 }

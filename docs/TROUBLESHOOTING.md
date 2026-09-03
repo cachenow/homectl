@@ -80,17 +80,25 @@ Server agent_offline_timeout 25s
 
 `agent_offline_timeout` 应大于心跳周期至少 2 倍。Web 默认每 5 秒刷新，因此默认最慢约 25–30 秒反映离线。
 
-## Terminal 缩放异常或交互程序在缩放后结束
+## Terminal 外框很大但 htop 仍很小
 
-HomeCTL 会在创建 PTY 前传递浏览器实际 `cols/rows`。拖动窗口时，浏览器先立即适配本地画布，停止拖动后再向远端发送一次稳定尺寸；Server 和 Agent 还会拒绝非法尺寸并忽略重复尺寸，避免连续 `SIGWINCH` 让 `htop`、`vim` 等交互程序反复重绘。该逻辑不针对特定程序。
-
-如果缩放后仍显示异常或终端连接被关闭：
+HomeCTL 会在创建 PTY 前把浏览器实际 `cols/rows` 传给 Server，并在窗口缩放后继续发送 `term_resize`。如果仍异常：
 
 1. 强制刷新浏览器缓存。
-2. 确认 Server 与 Agent 都已升级；只更新一端无法获得完整修复。
-3. 浏览器开发者工具 Console 检查 `terminal fit failed` 或 WebSocket 关闭信息。
-4. 同时查看 Server 与 Agent 日志，确认没有写入超时、网络断开或资源上限错误。
-5. 在浏览器 Network 中确认 `/vendor/xterm/xterm-6.0.0.mjs`、`addon-fit-0.11.0.mjs` 和 `xterm-6.0.0.css` 均返回 200。这些文件已嵌入 Server 二进制，不依赖外部 CDN；若返回 404，通常说明仍在运行旧版 Server。
+2. 确认 Server 已升级到最新版本。
+3. 浏览器开发者工具 Console 检查 `terminal fit failed`。
+4. 打开浏览器 Network，确认 `/vendor/xterm/xterm-6.0.0.mjs`、`/vendor/xterm/addon-fit-0.11.0.mjs` 和 `/vendor/xterm/xterm-6.0.0.css` 均返回 200。它们已内置于 Server，不需要访问 CDN。
+
+调整终端窗口时，浏览器会先立即适配本地画布，再经过短暂防抖向 PTY 发送真正变化后的行列数。持续交互程序不应因为重复 Resize 被关闭；如果连接本身显示“已关闭”，同时检查 Server 与 Agent 日志中的 WebSocket 断线原因。
+
+## 指标卡片没有数据
+
+先在“设备管理”中点击目标设备行的“指标卡片”，确认该卡片已启用。这里的选择按设备独立保存；只操作六点拖拽手柄不会切换当前设置对象。
+
+- 网络和磁盘 I/O 速率第一次采样为 0，下一次心跳后才有差值。
+- 进程统计最多缓存 60 秒。
+- CPU 温度无法从 Linux thermal/hwmon 读取时会自动隐藏。
+- 设备离线后，卡片中的动态值会立即显示为 0；主机名、系统、架构、IP 和 Agent 版本等静态详情仍保留，便于识别设备。
 
 ## 文件浏览器按钮没有出现
 

@@ -65,7 +65,7 @@ HomeCTL 只在直接 TCP 对端属于 `trusted_proxy_cidrs` 时读取该 Header�
 | 参数 | 默认值 | 说明 |
 |---|---:|---|
 | `server` | 必填 | Server Agent WebSocket URL，必须是合法的 `ws://` 或 `wss://` URL，例如 `wss://panel.example.com/agent/ws`。 |
-| `name` | `""` | 首次注册名称的后备值。Web 生成 Token 时填写的“首次显示名称”优先且保留大小写；Web 留空时使用此值，此值也为空时才使用 hostname。最长 128 字符。已保存的控制台名称不会被心跳覆盖。 |
+| `name` | `""` | 首次注册时的默认显示名；为空时使用主机 hostname。最长 128 字符。控制台自定义名称后不会被心跳覆盖。 |
 | `enroll_token` | `""` | 首次注册使用的一次性 Token。注册完成后不再参与设备认证，可从配置中清空。 |
 | `state_file` | `state.json` | Agent 身份状态文件；相对路径按配置文件目录解析。 |
 | `heartbeat_interval` | `10s` | 心跳及轻量系统信息上报周期。 |
@@ -103,3 +103,15 @@ Agent：
 chmod 600 /opt/homectl-agent/config.json
 chmod 600 /opt/homectl-agent/state.json
 ```
+
+## 按设备设置指标采集
+
+CPU、内存、存储、网络吞吐、进程状态和磁盘 I/O 的开关不属于 Agent `config.json`。它们按设备保存在 Server 数据库中，请在 Web 面板按以下顺序设置：
+
+```text
+设备管理 → 在目标设备行点击“指标卡片” → 勾选需要的卡片
+```
+
+每台设备至少保留 3 张。在线设备会立即收到新策略；离线设备会在下次连接握手时收到。取消某张卡片后，兼容 v2.0.0 指标策略的 Agent 不再采集和上报对应动态字段，从源头减少读取与传输；旧 Agent 可以继续连接，但需要升级后才具备按需采集能力。
+
+进程统计最多每 60 秒扫描一次 `/proc/[pid]/stat`，其余低成本计数器随心跳读取。没有可用温度传感器时，CPU 卡片自动隐藏温度值。

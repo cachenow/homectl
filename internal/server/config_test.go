@@ -138,28 +138,32 @@ func TestDeploymentConfigExamplesLoad(t *testing.T) {
 			if _, err := LoadConfig(path); err != nil {
 				t.Fatalf("load %s: %v", path, err)
 			}
-			requireCompleteJSONConfig(t, path, reflect.TypeOf(fileConfig{}))
 		})
 	}
 }
 
-func requireCompleteJSONConfig(t *testing.T, path string, configType reflect.Type) {
+func TestDeploymentConfigExamplesContainEveryServerOption(t *testing.T) {
+	typ := reflect.TypeOf(fileConfig{})
+	for _, name := range []string{"config.example.json", "config.binary.example.json"} {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join("..", "..", "deploy", "server", name)
+			assertConfigObjectHasEveryTaggedField(t, path, typ)
+		})
+	}
+}
+
+func assertConfigObjectHasEveryTaggedField(t *testing.T, path string, typ reflect.Type) {
 	t.Helper()
-	b, err := os.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var values map[string]json.RawMessage
-	if err := json.Unmarshal(b, &values); err != nil {
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(contents, &object); err != nil {
 		t.Fatal(err)
 	}
-	requireJSONFields(t, path, values, configType)
-}
-
-func requireJSONFields(t *testing.T, path string, values map[string]json.RawMessage, configType reflect.Type) {
-	t.Helper()
-	for i := 0; i < configType.NumField(); i++ {
-		field := configType.Field(i)
+	for index := 0; index < typ.NumField(); index++ {
+		field := typ.Field(index)
 		if field.PkgPath != "" {
 			continue
 		}
@@ -167,18 +171,8 @@ func requireJSONFields(t *testing.T, path string, values map[string]json.RawMess
 		if name == "" || name == "-" {
 			continue
 		}
-		raw, ok := values[name]
-		if !ok {
-			t.Errorf("%s is missing configurable field %q", path, name)
-			continue
-		}
-		if field.Type.Kind() == reflect.Struct {
-			var nested map[string]json.RawMessage
-			if err := json.Unmarshal(raw, &nested); err != nil {
-				t.Errorf("%s field %q is not an object: %v", path, name, err)
-				continue
-			}
-			requireJSONFields(t, path+"."+name, nested, field.Type)
+		if _, ok := object[name]; !ok {
+			t.Errorf("%s omits configurable field %q", path, name)
 		}
 	}
 }

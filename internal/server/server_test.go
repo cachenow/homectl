@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -60,48 +62,121 @@ func TestHeartbeatQueueKeepsLatestUpdate(t *testing.T) {
 	}
 }
 
-func TestTerminalDimensionsAreBounded(t *testing.T) {
-	for _, size := range [][2]uint16{{8, 8}, {100, 30}, {1000, 1000}} {
-		if !validTerminalSize(size[0], size[1]) {
-			t.Fatalf("valid terminal dimensions %dx%d were rejected", size[0], size[1])
+func TestDevicesAPIUsesStoredOrderAndClearsOfflineDynamicMetrics(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "homectl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	temperature := 48.0
+	for _, record := range []*DeviceRecord{
+		{ID: "second", Name: "Alpha", TokenHash: hashToken("two"), LastSeen: time.Now().Unix(), Info: &protocol.SystemInfo{Hostname: "second-host", CPUUsage: 72, CPUTempC: &temperature, NetRXBPS: 100}},
+		{ID: "first", Name: "Zulu", TokenHash: hashToken("one"), LastSeen: time.Now().Unix(), Info: &protocol.SystemInfo{Hostname: "first-host", CPUUsage: 31, ProcessZombie: 2}},
+	} {
+		if err := store.Put(record); err != nil {
+			t.Fatal(err)
 		}
 	}
-	for _, size := range [][2]uint16{{0, 30}, {7, 30}, {100, 7}, {1001, 30}, {100, 1001}} {
-		if validTerminalSize(size[0], size[1]) {
-			t.Fatalf("invalid terminal dimensions %dx%d were accepted", size[0], size[1])
-		}
+	if err := store.ReorderDevices([]string{"first", "second"}); err != nil {
+		t.Fatal(err)
 	}
-	if got := parseTerminalDimension("120", 100); got != 120 {
-		t.Fatalf("parsed terminal dimension=%d, want 120", got)
+	s := New(Config{AgentOfflineTimeout: time.Minute}, store)
+	w := httptest.NewRecorder()
+	s.handleDevices(w, httptest.NewRequest(http.MethodGet, "/api/devices", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("devices status=%d body=%s", w.Code, w.Body.String())
 	}
-	for _, raw := range []string{"", "0", "7", "1001", "invalid"} {
-		if got := parseTerminalDimension(raw, 100); got != 100 {
-			t.Fatalf("parseTerminalDimension(%q)=%d, want fallback 100", raw, got)
-		}
+	var response []deviceView
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
+	if len(response) != 2 || response[0].ID != "first" || response[1].ID != "second" {
+		t.Fatalf("device API order=%#v", response)
+	}
+	if response[0].Online || response[0].Info.Hostname != "first-host" || response[0].Info.CPUUsage != 0 || response[0].Info.ProcessZombie != 0 {
+		t.Fatalf("offline response retained dynamic values or lost inventory: %#v", response[0])
+	}
+	if response[1].Info.CPUTempC != nil || response[1].Info.NetRXBPS != 0 {
+		t.Fatalf("offline response retained dynamic values: %#v", response[1])
 	}
 }
 
-func TestSecurityHeadersUseLocalCacheableTerminalAssets(t *testing.T) {
-	rr := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/vendor/xterm/xterm-6.0.0.mjs", nil)
-	securityHeaders(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
-	})).ServeHTTP(rr, req)
-
-	csp := rr.Header().Get("Content-Security-Policy")
-	if csp == "" {
-		t.Fatal("Content-Security-Policy header is missing")
+func TestMetricCardsHandlerPersistsValidatedPolicy(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "homectl.db"))
+	if err != nil {
+		t.Fatal(err)
 	}
-	if strings.Contains(csp, "cdn.jsdelivr.net") || strings.Contains(csp, "https://") {
-		t.Fatalf("CSP still permits an external script or style source: %q", csp)
+	defer store.Close()
+	if err := store.Put(&DeviceRecord{ID: "device", Name: "Device", TokenHash: hashToken("token")}); err != nil {
+		t.Fatal(err)
 	}
-	for _, directive := range []string{"script-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline'"} {
-		if !strings.Contains(csp, directive) {
-			t.Fatalf("CSP missing %q: %q", directive, csp)
+	s := New(Config{AgentWriteTimeout: time.Second}, store)
+	req := httptest.NewRequest(http.MethodPut, "/api/device/device/metric-cards", bytes.NewBufferString(`{"metric_cards":["network","memory","cpu"]}`))
+	req.SetPathValue("id", "device")
+	w := httptest.NewRecorder()
+	s.handleMetricCards(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("metric policy status=%d body=%s", w.Code, w.Body.String())
+	}
+	var result struct {
+		AgentOnline     bool `json:"agent_online"`
+		PolicySupported bool `json:"policy_supported"`
+		AppliedOnline   bool `json:"applied_online"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.AgentOnline || result.PolicySupported || result.AppliedOnline {
+		t.Fatalf("offline policy result=%#v", result)
+	}
+	record, err := store.Get("device")
+	if err != nil || record == nil {
+		t.Fatalf("stored device=%#v err=%v", record, err)
+	}
+	want := []string{protocol.MetricCPU, protocol.MetricMemory, protocol.MetricNetwork}
+	for index := range want {
+		if record.MetricCards[index] != want[index] {
+			t.Fatalf("stored metric cards=%v want=%v", record.MetricCards, want)
 		}
 	}
-	if cacheControl := rr.Header().Get("Cache-Control"); cacheControl != "public, max-age=31536000, immutable" {
-		t.Fatalf("local Terminal asset Cache-Control=%q", cacheControl)
+
+	bad := httptest.NewRequest(http.MethodPut, "/api/device/device/metric-cards", bytes.NewBufferString(`{"metric_cards":["cpu","memory"]}`))
+	bad.SetPathValue("id", "device")
+	badResponse := httptest.NewRecorder()
+	s.handleMetricCards(badResponse, bad)
+	if badResponse.Code != http.StatusBadRequest {
+		t.Fatalf("two-card policy status=%d", badResponse.Code)
+	}
+}
+
+func TestMetricCardsHandlerReportsOnlineLegacyAgentWithoutSending(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "homectl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	if err := store.Put(&DeviceRecord{ID: "legacy", Name: "Legacy", TokenHash: hashToken("token")}); err != nil {
+		t.Fatal(err)
+	}
+	s := New(Config{AgentWriteTimeout: time.Second}, store)
+	s.agents["legacy"] = &AgentConn{done: make(chan struct{})}
+	req := httptest.NewRequest(http.MethodPut, "/api/device/legacy/metric-cards", bytes.NewBufferString(`{"metric_cards":["cpu","memory","disk"]}`))
+	req.SetPathValue("id", "legacy")
+	w := httptest.NewRecorder()
+	s.handleMetricCards(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("legacy policy status=%d body=%s", w.Code, w.Body.String())
+	}
+	var result struct {
+		AgentOnline     bool `json:"agent_online"`
+		PolicySupported bool `json:"policy_supported"`
+		AppliedOnline   bool `json:"applied_online"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if !result.AgentOnline || result.PolicySupported || result.AppliedOnline {
+		t.Fatalf("legacy policy result=%#v", result)
 	}
 }
 
@@ -205,6 +280,10 @@ func TestEnrollmentCompatibilityAndRegisteredReconnect(t *testing.T) {
 	if !protocol.ValidDeviceToken(ack.DeviceToken) {
 		c.CloseNow()
 		t.Fatalf("generated device token=%q", ack.DeviceToken)
+	}
+	if len(ack.MetricCards) != len(protocol.DefaultMetricCards()) {
+		c.CloseNow()
+		t.Fatalf("default metric policy missing from acknowledgement: %#v", ack)
 	}
 	c.CloseNow()
 	rec, err := store.Get("old-agent")

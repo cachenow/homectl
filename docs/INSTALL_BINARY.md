@@ -13,23 +13,19 @@ homectl-server-vX.Y.Z-linux-arm64.tar.gz
 
 只有存储空间明显受限时才选择文件名带 `-upx` 的附加压缩包。两种包功能相同，见 [RELEASES.md](RELEASES.md)。
 
-## 2. 解压并准备运行目录
+## 2. 安装目录
 
 ```bash
-mkdir -p /opt/homectl-server
-tar -xzf /path/to/homectl-server-vX.Y.Z-linux-amd64.tar.gz -C /opt/homectl-server
 mkdir -p /opt/homectl-server/data
 ```
 
-把示例包名换成第 1 步选择的架构。Release 包会直接形成：
+解压后整理为：
 
 ```text
 /opt/homectl-server/
 ├── homectl-server
 ├── config.json
 ├── homectl-server.service
-├── README.md
-├── docs/
 └── data/
 ```
 
@@ -56,7 +52,7 @@ chown -R homectl:homectl /opt/homectl-server
 openssl rand -hex 32
 ```
 
-打开 `/opt/homectl-server/config.json`，把结果写入 `admin_password`。Release 中的该文件已包含 Server 的全部可配置项，不要用只含少数字段的新文件覆盖它。
+把结果写入 `/opt/homectl-server/config.json`。
 
 可信 LAN 中直接使用 HTTP 的完整示例：
 
@@ -113,14 +109,10 @@ openssl rand -hex 32
 
 ## 5. 手动启动验证
 
-使用第 3 步创建的运行账号启动，避免由 root 提前创建一个 systemd 服务无法写入的数据库：
-
 ```bash
 cd /opt/homectl-server
-runuser -u homectl -- ./homectl-server -config ./config.json
+./homectl-server -config ./config.json
 ```
-
-如果第 3 步选择了其他服务账号，把 `homectl` 换成该账号；如果明确选择由 root 运行，才直接执行二进制。
 
 另一个终端：
 
@@ -131,8 +123,6 @@ curl http://127.0.0.1:8080/healthz
 看到 `ok` 后结束前台进程。
 
 ## 6. systemd
-
-默认 service 使用 `User=homectl` 和 `Group=homectl`。如果第 3 步选择了其他账号，先编辑 `/opt/homectl-server/homectl-server.service` 中这两行，再继续：
 
 ```bash
 cp /opt/homectl-server/homectl-server.service /etc/systemd/system/homectl-server.service
@@ -146,6 +136,8 @@ systemctl status homectl-server
 ```bash
 journalctl -u homectl-server -f
 ```
+
+如果没有创建 `homectl` 用户，编辑 service 中的 `User=` / `Group=` 为实际运行账号。
 
 ## 7. HTTPS / 公网入口
 
@@ -173,17 +165,10 @@ http://127.0.0.1:8080
 
 ## 8. 首次登录和 Agent
 
-首次登录成功表示管理员已经写入 SQLite。此时将配置中的：
+管理员写入 SQLite 后，可将配置中的：
 
 ```json
 "admin_password": ""
 ```
 
-然后重启一次并确认仍能登录：
-
-```bash
-systemctl restart homectl-server
-systemctl status homectl-server
-```
-
-最后从“设备管理”生成一次性 Enrollment Token，并继续 [AGENT.md](AGENT.md)。
+随后从“设备管理”生成一次性 Enrollment Token，并继续 [AGENT.md](AGENT.md)。

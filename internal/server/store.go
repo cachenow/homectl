@@ -17,11 +17,13 @@ import (
 )
 
 type DeviceRecord struct {
-	ID        string
-	Name      string
-	TokenHash []byte
-	LastSeen  int64
-	Info      *protocol.SystemInfo
+	ID          string
+	Name        string
+	TokenHash   []byte
+	LastSeen    int64
+	Info        *protocol.SystemInfo
+	SortOrder   int64
+	MetricCards []string
 }
 
 type AdminRecord struct {
@@ -119,6 +121,9 @@ func (s *Store) initSchema() error {
 	if err := s.migrateAdminSchema(); err != nil {
 		return err
 	}
+	if err := s.migrateDevicePreferences(); err != nil {
+		return err
+	}
 	if _, err := s.db.Exec(fmt.Sprintf(`PRAGMA user_version=%d`, currentSchemaVersion)); err != nil {
 		return fmt.Errorf("set schema version: %w", err)
 	}
@@ -132,7 +137,9 @@ func (s *Store) ensureSchemaObjects() error {
   name TEXT NOT NULL,
   token_hash BLOB NOT NULL,
   last_seen INTEGER NOT NULL DEFAULT 0,
-  info_json TEXT NOT NULL DEFAULT ''
+  info_json TEXT NOT NULL DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  metric_cards TEXT NOT NULL DEFAULT '["cpu","memory","disk","network","processes","diskio"]'
 )`,
 		`CREATE TABLE IF NOT EXISTS admins (
   id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -167,7 +174,9 @@ func (s *Store) ensureSchemaObjects() error {
 	return nil
 }
 
-const currentSchemaVersion = 1
+const currentSchemaVersion = 2
+
+const defaultMetricCardsJSON = `["cpu","memory","disk","network","processes","diskio"]`
 
 func (s *Store) migrateAdminSchema() error {
 	var declaredType string
@@ -240,13 +249,58 @@ SELECT id,username,CAST(password_hash AS TEXT),totp_secret,totp_last_login_step,
 	return nil
 }
 
+func (s *Store) migrateDevicePreferences() error {
+	columns := make(map[string]bool)
+	rows, err := s.db.Query(`PRAGMA table_info(devices)`)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var cid int
+		var name, typ string
+		var notnull, pk int
+		var dflt any
+		if err := rows.Scan(&cid, &name, &typ, &notnull, &dflt, &pk); err != nil {
+			rows.Close()
+			return err
+		}
+		columns[name] = true
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+
+	addedSortOrder := false
+	if !columns["sort_order"] {
+		if _, err := s.db.Exec(`ALTER TABLE devices ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0`); err != nil {
+			return fmt.Errorf("add device sort order: %w", err)
+		}
+		addedSortOrder = true
+	}
+	if !columns["metric_cards"] {
+		if _, err := s.db.Exec(`ALTER TABLE devices ADD COLUMN metric_cards TEXT NOT NULL DEFAULT '["cpu","memory","disk","network","processes","diskio"]'`); err != nil {
+			return fmt.Errorf("add device metric cards: %w", err)
+		}
+	}
+	if addedSortOrder {
+		// Preserve the exact order used by previous releases on first migration.
+		if _, err := s.db.Exec(`UPDATE devices SET sort_order=(
+  SELECT COUNT(*)-1 FROM devices AS prior
+  WHERE prior.name < devices.name OR (prior.name = devices.name AND prior.id <= devices.id)
+)`); err != nil {
+			return fmt.Errorf("initialize device sort order: %w", err)
+		}
+	}
+	return nil
+}
+
 func (s *Store) Close() error { return s.db.Close() }
 
 func (s *Store) Get(id string) (*DeviceRecord, error) {
 	var d DeviceRecord
-	var infoJSON string
-	err := s.db.QueryRow(`SELECT id,name,token_hash,last_seen,info_json FROM devices WHERE id=?`, id).
-		Scan(&d.ID, &d.Name, &d.TokenHash, &d.LastSeen, &infoJSON)
+	var infoJSON, metricCardsJSON string
+	err := s.db.QueryRow(`SELECT id,name,token_hash,last_seen,info_json,sort_order,metric_cards FROM devices WHERE id=?`, id).
+		Scan(&d.ID, &d.Name, &d.TokenHash, &d.LastSeen, &infoJSON, &d.SortOrder, &metricCardsJSON)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -259,6 +313,7 @@ func (s *Store) Get(id string) (*DeviceRecord, error) {
 			d.Info = &info
 		}
 	}
+	d.MetricCards = decodeMetricCards(metricCardsJSON)
 	return &d, nil
 }
 
@@ -274,14 +329,18 @@ func (s *Store) Put(r *DeviceRecord) error {
 		}
 		infoJSON = string(b)
 	}
-	_, err := s.db.Exec(`
-INSERT INTO devices(id,name,token_hash,last_seen,info_json)
-VALUES(?,?,?,?,?)
+	metricCardsJSON, err := encodeMetricCards(r.MetricCards)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.Exec(`
+INSERT INTO devices(id,name,token_hash,last_seen,info_json,sort_order,metric_cards)
+VALUES(?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM devices),?)
 ON CONFLICT(id) DO UPDATE SET
  name=excluded.name,
  token_hash=excluded.token_hash,
  last_seen=excluded.last_seen,
- info_json=excluded.info_json`, r.ID, r.Name, r.TokenHash, r.LastSeen, infoJSON)
+ info_json=excluded.info_json`, r.ID, r.Name, r.TokenHash, r.LastSeen, infoJSON, metricCardsJSON)
 	return err
 }
 
@@ -303,13 +362,78 @@ func (s *Store) UpdateDeviceName(id, name string) error {
 	return err
 }
 
+func (s *Store) UpdateMetricCards(id string, cards []string) error {
+	encoded, err := encodeMetricCards(cards)
+	if err != nil {
+		return err
+	}
+	res, err := s.db.Exec(`UPDATE devices SET metric_cards=? WHERE id=?`, encoded, id)
+	if err != nil {
+		return err
+	}
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count != 1 {
+		return errors.New("device not found")
+	}
+	return nil
+}
+
+func (s *Store) ReorderDevices(ids []string) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query(`SELECT id FROM devices`)
+	if err != nil {
+		return err
+	}
+	existing := make(map[string]bool)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		existing[id] = true
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if len(ids) != len(existing) {
+		return errors.New("device order must contain every device exactly once")
+	}
+	seen := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		if id == "" || seen[id] || !existing[id] {
+			return errors.New("device order contains an unknown or duplicate device")
+		}
+		seen[id] = true
+	}
+	stmt, err := tx.Prepare(`UPDATE devices SET sort_order=? WHERE id=?`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for index, id := range ids {
+		if _, err := stmt.Exec(index, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func (s *Store) DeleteDevice(id string) error {
 	_, err := s.db.Exec(`DELETE FROM devices WHERE id=?`, id)
 	return err
 }
 
 func (s *Store) List() ([]DeviceRecord, error) {
-	rows, err := s.db.Query(`SELECT id,name,token_hash,last_seen,info_json FROM devices ORDER BY name,id`)
+	rows, err := s.db.Query(`SELECT id,name,token_hash,last_seen,info_json,sort_order,metric_cards FROM devices ORDER BY sort_order,id`)
 	if err != nil {
 		return nil, err
 	}
@@ -317,8 +441,8 @@ func (s *Store) List() ([]DeviceRecord, error) {
 	var out []DeviceRecord
 	for rows.Next() {
 		var d DeviceRecord
-		var infoJSON string
-		if err := rows.Scan(&d.ID, &d.Name, &d.TokenHash, &d.LastSeen, &infoJSON); err != nil {
+		var infoJSON, metricCardsJSON string
+		if err := rows.Scan(&d.ID, &d.Name, &d.TokenHash, &d.LastSeen, &infoJSON, &d.SortOrder, &metricCardsJSON); err != nil {
 			return nil, err
 		}
 		if infoJSON != "" {
@@ -327,9 +451,32 @@ func (s *Store) List() ([]DeviceRecord, error) {
 				d.Info = &info
 			}
 		}
+		d.MetricCards = decodeMetricCards(metricCardsJSON)
 		out = append(out, d)
 	}
 	return out, rows.Err()
+}
+
+func encodeMetricCards(cards []string) (string, error) {
+	if len(cards) == 0 {
+		return defaultMetricCardsJSON, nil
+	}
+	normalized, err := protocol.NormalizeMetricCards(cards, 3)
+	if err != nil {
+		return "", err
+	}
+	b, err := json.Marshal(normalized)
+	return string(b), err
+}
+
+func decodeMetricCards(encoded string) []string {
+	var cards []string
+	if json.Unmarshal([]byte(encoded), &cards) == nil {
+		if normalized, err := protocol.NormalizeMetricCards(cards, 3); err == nil {
+			return normalized
+		}
+	}
+	return protocol.DefaultMetricCards()
 }
 
 func (s *Store) EnsureAdmin(username, password string) error {
@@ -643,7 +790,12 @@ func (s *Store) EnrollDevice(enrollmentToken string, d *DeviceRecord) (bool, err
 			initialName = normalized
 		}
 	}
-	if _, err := tx.Exec(`INSERT INTO devices(id,name,token_hash,last_seen,info_json) VALUES(?,?,?,?,?)`, d.ID, initialName, d.TokenHash, d.LastSeen, infoJSON); err != nil {
+	metricCardsJSON, err := encodeMetricCards(d.MetricCards)
+	if err != nil {
+		return false, err
+	}
+	if _, err := tx.Exec(`INSERT INTO devices(id,name,token_hash,last_seen,info_json,sort_order,metric_cards)
+VALUES(?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM devices),?)`, d.ID, initialName, d.TokenHash, d.LastSeen, infoJSON, metricCardsJSON); err != nil {
 		return false, err
 	}
 	if err := tx.Commit(); err != nil {

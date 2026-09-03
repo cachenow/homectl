@@ -6,7 +6,7 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 DIST="$ROOT/dist"
 
 if [[ ! "$VERSION" =~ ^(dev|v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?)$ ]]; then
-  echo "version must be dev or a release such as v1.0.0 or v1.0.0-rc.1" >&2
+  echo "version must be dev or a release such as v2.0.0 or v2.0.0-rc.1" >&2
   exit 2
 fi
 
@@ -51,6 +51,15 @@ try_upx() {
   return 0
 }
 
+# Archive only the declared release entries. Besides preventing accidental
+# inclusion of build leftovers, this avoids transient workspace synchronizer
+# files from changing a staging directory while tar is reading `.`.
+create_archive() {
+  local source=$1 archive=$2
+  shift 2
+  tar --no-recursion -C "$source" -czf "$archive" "$@"
+}
+
 package_agent() {
   local label=$1 goarch=$2 goarm=${3:-}
   local work="$DIST/.agent-$label"
@@ -63,14 +72,18 @@ package_agent() {
   cp deploy/agent/install.sh "$work/install.sh"
   cp deploy/agent/README.md "$work/README.md"
   chmod 0755 "$work/install.sh" "$work/homectl-agent" "$work/homectl-agent.openwrt.init"
-  tar -C "$work" -czf "$DIST/homectl-agent-${VERSION}-linux-${label}.tar.gz" .
+  local entries=(README.md config.json homectl-agent homectl-agent.openwrt.init homectl-agent.service install.sh)
+  create_archive "$work" "$DIST/homectl-agent-${VERSION}-linux-${label}.tar.gz" "${entries[@]}"
 
   local upxwork="$DIST/.agent-${label}-upx"
-  cp -a "$work" "$upxwork"
+  mkdir -p "$upxwork"
+  cp "$work"/README.md "$work"/config.json "$work"/homectl-agent "$work"/homectl-agent.openwrt.init "$work"/homectl-agent.service "$work"/install.sh "$upxwork"/
+  chmod 0600 "$upxwork/config.json"
+  chmod 0755 "$upxwork/install.sh" "$upxwork/homectl-agent" "$upxwork/homectl-agent.openwrt.init"
   local smoke=false
   if [[ "$label" == "amd64" && "$(uname -m)" == "x86_64" ]]; then smoke=true; fi
   if try_upx "$work/homectl-agent" "$upxwork/homectl-agent" "$smoke"; then
-    tar -C "$upxwork" -czf "$DIST/homectl-agent-${VERSION}-linux-${label}-upx.tar.gz" .
+    create_archive "$upxwork" "$DIST/homectl-agent-${VERSION}-linux-${label}-upx.tar.gz" "${entries[@]}"
   else
     echo "==> UPX unavailable/unsupported for agent $label; skipping optional UPX asset"
   fi
@@ -92,16 +105,25 @@ package_server() {
   cp deploy/server/homectl-server.service "$work/homectl-server.service"
   sed 's#(../../docs/#(docs/#g' deploy/server/README.binary.md > "$work/README.md"
   cp docs/*.md "$work/docs/"
-  tar -C "$work" -czf "$DIST/homectl-server-${VERSION}-linux-${label}.tar.gz" .
+  local entries=(README.md config.json homectl-server homectl-server.service data)
+  local doc
+  for doc in "$work"/docs/*.md; do
+    entries+=("docs/${doc##*/}")
+  done
+  create_archive "$work" "$DIST/homectl-server-${VERSION}-linux-${label}.tar.gz" "${entries[@]}"
 
   local upxraw="$DIST/homectl-server-${VERSION}-linux-${label}-upx"
   local smoke=false
   if [[ "$label" == "amd64" && "$(uname -m)" == "x86_64" ]]; then smoke=true; fi
   if try_upx "$raw" "$upxraw" "$smoke"; then
     local upxwork="$DIST/.server-${label}-upx"
-    cp -a "$work" "$upxwork"
+    mkdir -p "$upxwork/data" "$upxwork/docs"
+    cp "$work"/README.md "$work"/config.json "$work"/homectl-server.service "$upxwork"/
+    cp "$work"/docs/*.md "$upxwork/docs"/
+    chmod 0700 "$upxwork/data"
+    chmod 0600 "$upxwork/config.json"
     cp "$upxraw" "$upxwork/homectl-server"
-    tar -C "$upxwork" -czf "$DIST/homectl-server-${VERSION}-linux-${label}-upx.tar.gz" .
+    create_archive "$upxwork" "$DIST/homectl-server-${VERSION}-linux-${label}-upx.tar.gz" "${entries[@]}"
     rm -rf "$upxwork"
   else
     echo "==> UPX unavailable/unsupported for server $label; skipping optional UPX asset"
@@ -132,7 +154,11 @@ sed \
   -e "s|__IMAGE__|${image}|g" \
   -e "s|__TAG__|${VERSION}|g" \
   deploy/server/docker-compose.release.yml > "$work/docker-compose.yml"
-tar -C "$work" -czf "$DIST/homectl-server-deploy-${VERSION}.tar.gz" .
+deploy_entries=(README.md config.json docker-compose.yml data)
+for doc in "$work"/docs/*.md; do
+  deploy_entries+=("docs/${doc##*/}")
+done
+create_archive "$work" "$DIST/homectl-server-deploy-${VERSION}.tar.gz" "${deploy_entries[@]}"
 rm -rf "$work"
 
 (

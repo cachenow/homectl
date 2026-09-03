@@ -1,7 +1,5 @@
 # HomeCTL
 
-<img width="1248" height="743" alt="demo" src="https://github.com/user-attachments/assets/2fee4685-14e0-485d-9ebb-d3eb7ba46921" />
-
 HomeCTL 是一个面向家庭网络、实验室和小型私有环境的轻量 Linux 远程管理面板。它由一个 Go Server 和每台受控 Linux 主机上的 Go Agent 组成。
 
 Agent **主动**建立到 Server 的 WSS 长连接，因此家庭宽带没有公网 IP、Agent 主机无法开放入站端口时也可以使用。状态上报、命令、终端和按需文件操作复用同一条连接。
@@ -9,13 +7,13 @@ Agent **主动**建立到 Server 的 WSS 长连接，因此家庭宽带没有公
 ## 功能
 
 - 多 Linux Agent 管理，每台设备使用独立长期 Device Token
-- CPU / 内存 / 文件系统使用率和物理块设备容量展示
+- 六类可选指标卡片：CPU/温度、内存、存储、网络吞吐、进程状态和磁盘 I/O
 - 主机名、OS、Kernel、架构、CPU、IP、Uptime、最后心跳
 - 心跳超时离线判定
 - Web 命令执行、退出码、stdout/stderr 和结果自动收起
 - 重启 / 关机
-- 本地内嵌 xterm.js + FitAddon 的 PTY Web Terminal，不依赖外部 CDN，支持拖动、缩放、最大化和自动适配行列数
-- 设备自定义名称、删除、一次性 Enrollment Token
+- 内置 xterm.js + FitAddon 的 PTY Web Terminal，不依赖第三方 CDN；支持拖动、缩放、最大化和自动适配行列数
+- 设备自定义名称、手柄拖动排序、按设备选择指标卡片、删除和一次性 Enrollment Token
 - 暗色 / 亮色 / 跟随系统主题
 - 用户名 + 密码认证，可选 TOTP 两步验证
 - 两阶段 TOTP 登录：密码通过后才显示 6 位验证码步骤
@@ -52,7 +50,7 @@ Cloudflare Tunnel、Caddy、Nginx 等都只是可选的公网/HTTPS 入口，不
 
 Server 启动后，再按 [docs/AGENT.md](docs/AGENT.md) 添加 Agent。
 
-完整参数说明见 [docs/CONFIGURATION.md](docs/CONFIGURATION.md)。如果使用 Cloudflare Tunnel，见 [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md)。
+面板操作见 [docs/WEB_PANEL.md](docs/WEB_PANEL.md)，完整参数说明见 [docs/CONFIGURATION.md](docs/CONFIGURATION.md)。如果使用 Cloudflare Tunnel，见 [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md)。
 
 ## 推荐默认值
 
@@ -82,6 +80,7 @@ TOTP                      optional
 - [Docker Compose 部署](docs/INSTALL_DOCKER.md)
 - [纯二进制部署](docs/INSTALL_BINARY.md)
 - [Agent 安装与升级](docs/AGENT.md)
+- [Web 面板使用](docs/WEB_PANEL.md)
 - [完整配置参数](docs/CONFIGURATION.md)
 - [Cloudflare Tunnel](docs/CLOUDFLARE.md)
 - [安全模型](docs/SECURITY.md)
