@@ -1227,17 +1227,17 @@
   <div class="modal-head"><h2>账户设置</h2><button onclick="closeModal('accountModal')">关闭</button></div>
   <div class="modal-body">
     <div id="accountMainView" class="modal-view">
-      <div class="section"><h3>用户名</h3><div class="field"><label>新用户名</label><input id="accountUsername"></div><div class="field"><label>当前密码</label><input id="accountUsernamePassword" type="password"></div><button onclick="changeUsername()">修改用户名</button></div>
-      <div class="section"><h3>修改密码</h3><div class="field"><label>当前密码</label><input id="currentPassword" type="password"></div><div class="field"><label>新密码（至少 16 个字符，不强制特殊字符）</label><input id="newPassword" type="password" autocomplete="new-password"></div><button onclick="changePassword()">修改密码</button></div>
-      <div class="section"><h3>两步验证（TOTP）</h3><div id="totpStatus" class="setting-summary"></div><div class="field"><label>当前密码</label><input id="totpPassword" type="password"></div><button id="totpSetupBtn" onclick="setupTOTP()">配置两步验证</button><button id="totpDisableBtn" class="danger hidden" onclick="disableTOTP()">关闭两步验证</button><div id="totpDisableCodeWrap" class="hidden"><div class="field"><label>当前 6 位验证码</label><input id="totpDisableCode" inputmode="numeric" maxlength="6"></div></div></div>
+      <div class="section"><h3>用户名</h3><div class="field"><label for="accountUsername">新用户名</label><input id="accountUsername"></div><div class="field"><label for="accountUsernamePassword">当前密码</label><input id="accountUsernamePassword" type="password"></div><button onclick="changeUsername()">修改用户名</button></div>
+      <div class="section"><h3>修改密码</h3><div class="field"><label for="currentPassword">当前密码</label><input id="currentPassword" type="password"></div><div class="field"><label for="newPassword">新密码（至少 16 个字符，不强制特殊字符）</label><input id="newPassword" type="password" autocomplete="new-password"></div><button onclick="changePassword()">修改密码</button></div>
+      <div class="section"><h3>两步验证（TOTP）</h3><div id="totpStatus" class="setting-summary"></div><div class="field"><label for="totpPassword">当前密码</label><input id="totpPassword" type="password"></div><button id="totpSetupBtn" onclick="setupTOTP()">配置两步验证</button><button id="totpDisableBtn" class="danger hidden" onclick="disableTOTP()">关闭两步验证</button><div id="totpDisableCodeWrap" class="hidden"><div class="field"><label for="totpDisableCode">当前 6 位验证码</label><input id="totpDisableCode" inputmode="numeric" maxlength="6"></div></div></div>
     </div>
     <div id="totpSetup" class="modal-subview hidden">
       <div class="subview-head"><button class="subview-back" onclick="backAccountMain()" title="返回账户设置" aria-label="返回账户设置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="subview-head-copy"><h3>配置两步验证</h3><p>完成认证器绑定后再启用，不会改变其他账户设置。</p></div></div>
       <div class="hint-card">在 Google Authenticator、Microsoft Authenticator、1Password 等 TOTP 应用中添加下面的密钥，然后输入生成的 6 位验证码确认。</div>
-      <div class="field"><label>Secret</label><div class="code-row"><div id="totpSecret" class="code"></div><button class="copy-code" onclick="copyCodeValue('totpSecret',this)">复制</button></div></div>
-      <div class="field"><label>otpauth URI</label><div class="code-row"><div id="totpURI" class="code"></div><button class="copy-code" onclick="copyCodeValue('totpURI',this)">复制</button></div></div>
-      <div class="field"><label>再次输入当前密码</label><input id="totpEnablePassword" type="password" autocomplete="current-password"></div>
-      <div class="field"><label>6 位验证码</label><input id="totpEnableCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+      <div class="field"><label for="totpSecret">Secret</label><div class="code-row"><output id="totpSecret" class="code"></output><button class="copy-code" onclick="copyCodeValue('totpSecret',this)">复制</button></div></div>
+      <div class="field"><label for="totpURI">otpauth URI</label><div class="code-row"><output id="totpURI" class="code"></output><button class="copy-code" onclick="copyCodeValue('totpURI',this)">复制</button></div></div>
+      <div class="field"><label for="totpEnablePassword">再次输入当前密码</label><input id="totpEnablePassword" type="password" autocomplete="current-password"></div>
+      <div class="field"><label for="totpEnableCode">6 位验证码</label><input id="totpEnableCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
       <div class="subview-actions"><button class="primary" onclick="enableTOTP()">验证并启用</button></div>
     </div>
     <div id="accountMsg" class="inline-message" role="status" aria-live="polite"></div>
@@ -1254,7 +1254,7 @@
     <div id="enrollPanel" class="manage-enroll modal-subview hidden">
       <div class="subview-head"><button class="subview-back" onclick="closeDeviceManagerSubview()" title="返回设备管理" aria-label="返回设备管理"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="subview-head-copy"><h3>添加设备</h3><p>生成一次性注册凭据，并在 Agent 首次连接时完成绑定。</p></div></div>
       <div class="hint-card">自定义设备名仅用于首次显示；留空时使用 Agent 配置中的名称或主机名。一次性 Token 只用于首次注册。</div>
-      <div class="field"><label>自定义设备名（可选）</label><input id="enrollLabel" maxlength="128" placeholder="例如：HomeServer"></div>
+      <div class="field"><label for="enrollLabel">自定义设备名（可选）</label><input id="enrollLabel" maxlength="128" placeholder="例如：HomeServer"></div>
       <div class="subview-actions"><button class="primary" onclick="createEnrollToken()">生成一次性 Agent Token</button></div>
       <div id="enrollMsg" class="inline-message" role="status" aria-live="polite"></div>
       <div id="enrollResult" class="secure-result hidden"><div class="secure-result-head"><strong>Agent Token</strong><span class="secure-badge">仅显示一次</span></div><div class="code-row"><div id="enrollToken" class="code"></div><button class="copy-code" onclick="copyCodeValue('enrollToken',this)">复制</button></div><p id="enrollExpiry" class="secure-meta"></p><p class="secure-meta">首次注册成功后立即作废，请在离开此页面前保存。</p></div>
