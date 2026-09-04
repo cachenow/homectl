@@ -1369,8 +1369,12 @@ function renderCollapsedMetricSummary(key,d,info){
   if(!d.online)return summaryOfflineHTML(key);
   const live=info||{};
   if(key==='cpu'){
-    const pct=Number(live.cpu_usage),temp=Number.isFinite(Number(live.cpu_temp_c))?`${Number(live.cpu_temp_c).toFixed(1)}°C`:'温度采集中';
-    return summaryUtilizationHTML(key,'CPU',pct,`${info.cpu_cores||'?'} 核 · ${temp}`);
+    const pct=Number(live.cpu_usage);
+	const hasTemp=Number.isFinite(Number(live.cpu_temp_c));
+	const sub=hasTemp
+	  ? `${info.cpu_cores||'?'} 核 · ${Number(live.cpu_temp_c).toFixed(1)}°C`
+	  : `${info.cpu_cores||'?'} 核`;
+    return summaryUtilizationHTML(key,'CPU',pct,sub);
   }
   if(key==='memory'){
     const total=Number(live.mem_total)||0,used=Math.max(0,total-(Number(live.mem_available)||0)),pct=total?used/total*100:0;
