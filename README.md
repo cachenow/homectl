@@ -3,7 +3,7 @@
 </p>
 
 <h3 align="center">
-  HomeCTL - 安全连接你的 Linux 设备
+  HomeCTL - 自由连接你的 Linux 设备
 </h3>
 
 HomeCTL 是一个面向家庭网络、实验室和小型私有环境的轻量 Linux 远程管理面板。它由一个 Go Server 和每台受控 Linux 主机上的 Go Agent 组成。
