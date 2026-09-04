@@ -1174,20 +1174,20 @@
   <section id="login" class="login hidden">
     <div class="login-card stack">
       <div class="login-brand"><svg class="brand-logo brand-logo--login" viewBox="0 0 220 220" aria-hidden="true" focusable="false"><use class="logo-dark-use" href="#homectl-logo-dark"></use><use class="logo-light-use" href="#homectl-logo-light"></use></svg><h1>HomeCTL</h1><div class="muted">自由连接你的 Linux 设备</div></div>
-      <div id="loginPasswordStep" class="stack">
+      <form id="loginPasswordStep" class="stack" onsubmit="event.preventDefault();login()">
         <label class="login-field" aria-label="用户名"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg><input id="username" autocomplete="username" placeholder="用户名"></label>
         <label class="login-field" aria-label="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="password" type="password" autocomplete="current-password" placeholder="密码"></label>
         <div class="login-options" aria-label="登录偏好">
           <label class="login-preference"><input id="rememberUsername" type="checkbox"><span>记住用户名</span></label>
           <label class="login-preference"><input id="rememberLogin" type="checkbox"><span>保持登录</span></label>
         </div>
-        <button class="primary" onclick="login()">登录</button>
-      </div>
-      <div id="loginTOTPStep" class="stack hidden">
-        <div class="login-totp-head"><button class="login-back" onclick="backToPasswordLogin()" title="返回密码登录" aria-label="返回密码登录"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="login-totp-copy"><strong>两步验证</strong><div class="muted">输入认证器当前显示的 6 位验证码。</div></div><span class="login-totp-balance" aria-hidden="true"></span></div>
+        <button class="primary" type="submit">登录</button>
+      </form>
+      <form id="loginTOTPStep" class="stack hidden" onsubmit="event.preventDefault();verifyLoginTOTP()">
+        <div class="login-totp-head"><button class="login-back" type="button" onclick="backToPasswordLogin()" title="返回密码登录" aria-label="返回密码登录"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="login-totp-copy"><strong>两步验证</strong><div class="muted">输入认证器当前显示的 6 位验证码。</div></div><span class="login-totp-balance" aria-hidden="true"></span></div>
         <label class="login-field login-code-field" aria-label="6 位验证码"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="M9 12h6M12 9v6"/></svg><input id="loginTOTP" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="6 位验证码"></label>
-        <button class="primary" onclick="verifyLoginTOTP()">验证</button>
-      </div>
+        <button class="primary" type="submit">验证</button>
+      </form>
       <div id="loginerr" class="offline"></div>
     </div>
   </section>
@@ -1227,18 +1227,20 @@
   <div class="modal-head"><h2>账户设置</h2><button onclick="closeModal('accountModal')">关闭</button></div>
   <div class="modal-body">
     <div id="accountMainView" class="modal-view">
-      <div class="section"><h3>用户名</h3><div class="field"><label for="accountUsername">新用户名</label><input id="accountUsername"></div><div class="field"><label for="accountUsernamePassword">当前密码</label><input id="accountUsernamePassword" type="password"></div><button onclick="changeUsername()">修改用户名</button></div>
-      <div class="section"><h3>修改密码</h3><div class="field"><label for="currentPassword">当前密码</label><input id="currentPassword" type="password"></div><div class="field"><label for="newPassword">新密码（至少 16 个字符，不强制特殊字符）</label><input id="newPassword" type="password" autocomplete="new-password"></div><button onclick="changePassword()">修改密码</button></div>
-      <div class="section"><h3>两步验证（TOTP）</h3><div id="totpStatus" class="setting-summary"></div><div class="field"><label for="totpPassword">当前密码</label><input id="totpPassword" type="password"></div><button id="totpSetupBtn" onclick="setupTOTP()">配置两步验证</button><button id="totpDisableBtn" class="danger hidden" onclick="disableTOTP()">关闭两步验证</button><div id="totpDisableCodeWrap" class="hidden"><div class="field"><label for="totpDisableCode">当前 6 位验证码</label><input id="totpDisableCode" inputmode="numeric" maxlength="6"></div></div></div>
+      <form class="section" onsubmit="event.preventDefault();changeUsername()"><h3>用户名</h3><div class="field"><label for="accountUsername">新用户名</label><input id="accountUsername" autocomplete="username"></div><div class="field"><label for="accountUsernamePassword">当前密码</label><input id="accountUsernamePassword" type="password" autocomplete="current-password"></div><button type="submit">修改用户名</button></form>
+      <form class="section" onsubmit="event.preventDefault();changePassword()"><h3>修改密码</h3><div class="field"><label for="currentPassword">当前密码</label><input id="currentPassword" type="password" autocomplete="current-password"></div><div class="field"><label for="newPassword">新密码（至少 16 个字符，不强制特殊字符）</label><input id="newPassword" type="password" autocomplete="new-password"></div><button type="submit">修改密码</button></form>
+      <form class="section" onsubmit="event.preventDefault()"><h3>两步验证（TOTP）</h3><div id="totpStatus" class="setting-summary"></div><div class="field"><label for="totpPassword">当前密码</label><input id="totpPassword" type="password" autocomplete="current-password"></div><button id="totpSetupBtn" type="button" onclick="setupTOTP()">配置两步验证</button><button id="totpDisableBtn" type="button" class="danger hidden" onclick="disableTOTP()">关闭两步验证</button><div id="totpDisableCodeWrap" class="hidden"><div class="field"><label for="totpDisableCode">当前 6 位验证码</label><input id="totpDisableCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*"></div></div></form>
     </div>
     <div id="totpSetup" class="modal-subview hidden">
       <div class="subview-head"><button class="subview-back" onclick="backAccountMain()" title="返回账户设置" aria-label="返回账户设置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="subview-head-copy"><h3>配置两步验证</h3><p>完成认证器绑定后再启用，不会改变其他账户设置。</p></div></div>
       <div class="hint-card">在 Google Authenticator、Microsoft Authenticator、1Password 等 TOTP 应用中添加下面的密钥，然后输入生成的 6 位验证码确认。</div>
       <div class="field"><label for="totpSecret">Secret</label><div class="code-row"><output id="totpSecret" class="code"></output><button class="copy-code" onclick="copyCodeValue('totpSecret',this)">复制</button></div></div>
       <div class="field"><label for="totpURI">otpauth URI</label><div class="code-row"><output id="totpURI" class="code"></output><button class="copy-code" onclick="copyCodeValue('totpURI',this)">复制</button></div></div>
-      <div class="field"><label for="totpEnablePassword">再次输入当前密码</label><input id="totpEnablePassword" type="password" autocomplete="current-password"></div>
-      <div class="field"><label for="totpEnableCode">6 位验证码</label><input id="totpEnableCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
-      <div class="subview-actions"><button class="primary" onclick="enableTOTP()">验证并启用</button></div>
+      <form onsubmit="event.preventDefault();enableTOTP()">
+        <div class="field"><label for="totpEnablePassword">再次输入当前密码</label><input id="totpEnablePassword" type="password" autocomplete="current-password"></div>
+        <div class="field"><label for="totpEnableCode">6 位验证码</label><input id="totpEnableCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*"></div>
+        <div class="subview-actions"><button class="primary" type="submit">验证并启用</button></div>
+      </form>
     </div>
     <div id="accountMsg" class="inline-message" role="status" aria-live="polite"></div>
   </div>
