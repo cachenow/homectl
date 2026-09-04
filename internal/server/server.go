@@ -181,6 +181,11 @@ func (s *Server) Handler(webFS http.FileSystem) http.Handler {
 	mux.Handle("GET /api/device/{id}/files/download", s.requireAuth(http.HandlerFunc(s.handleFileDownload)))
 	mux.Handle("POST /api/device/{id}/files/upload", s.requireAuth(http.HandlerFunc(s.handleFileUpload)))
 	mux.HandleFunc("GET /ws/terminal/{id}", s.handleTerminalWS)
+	fileServer := http.FileServer(webFS)
+	mux.HandleFunc("GET /site.webmanifest", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/manifest+json")
+		fileServer.ServeHTTP(w, r)
+	})
 	mux.Handle("/", http.FileServer(webFS))
 	return securityHeaders(browserRequestGuard(mux))
 }
