@@ -338,3 +338,56 @@ func TestPreGeneratedDeviceTokenEnrollmentRecoversAfterLostAck(t *testing.T) {
 		t.Fatalf("recovered record=%#v err=%v", rec, err)
 	}
 }
+func TestWebManifestAndIconAssetsAreServed(t *testing.T) {
+	webDir := t.TempDir()
+
+	if err := os.WriteFile(
+		filepath.Join(webDir, "site.webmanifest"),
+		[]byte(`{"name":"HomeCTL"}`),
+		0600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	iconDir := filepath.Join(webDir, "assets", "icons")
+	if err := os.MkdirAll(iconDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(
+		filepath.Join(iconDir, "favicon.svg"),
+		[]byte(`<svg xmlns="http://www.w3.org/2000/svg"></svg>`),
+		0600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	s := New(Config{}, nil)
+	handler := s.Handler(http.FS(os.DirFS(webDir)))
+
+	t.Run("manifest", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/site.webmanifest", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("manifest status=%d body=%s", w.Code, w.Body.String())
+		}
+
+		if got := w.Header().Get("Content-Type"); !strings.HasPrefix(got, "application/manifest+json") {
+			t.Fatalf("manifest content-type=%q", got)
+		}
+	})
+
+	t.Run("nested icon", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/assets/icons/favicon.svg", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("favicon status=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+}
