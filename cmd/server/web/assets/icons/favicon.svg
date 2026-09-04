@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 24 172 172" role="img" aria-labelledby="title desc">
+  <title id="title">HomeCTL</title>
+  <desc id="desc">HomeCTL adaptive light and dark logo</desc>
+  <style>
+    .logo-light { display: none; }
+    @media (prefers-color-scheme: light) {
+      .logo-dark { display: none; }
+      .logo-light { display: inline; }
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="dark-bg" x1="28" y1="28" x2="192" y2="192" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17366F"/>
+      <stop offset=".45" stop-color="#0D2148"/>
+      <stop offset="1" stop-color="#071124"/>
+    </linearGradient>
+    <linearGradient id="dark-edge" x1="38" y1="36" x2="185" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6B98FF"/>
+      <stop offset=".45" stop-color="#2E5FB5"/>
+      <stop offset="1" stop-color="#1B3F82"/>
+    </linearGradient>
+    <linearGradient id="dark-home" x1="80" y1="78" x2="144" y2="154" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#AEBFDC"/>
+    </linearGradient>
+    <linearGradient id="dark-arrow" x1="78" y1="116" x2="146" y2="145" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#26BD91"/>
+      <stop offset=".48" stop-color="#3CDFAA"/>
+      <stop offset="1" stop-color="#82F0CE"/>
+    </linearGradient>
+    <filter id="dark-glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <linearGradient id="light-bg" x1="28" y1="28" x2="192" y2="192" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".52" stop-color="#F4F9FD"/>
+      <stop offset="1" stop-color="#E6F0F7"/>
+    </linearGradient>
+    <linearGradient id="light-edge" x1="38" y1="36" x2="185" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D7E9F6"/>
+      <stop offset=".48" stop-color="#BCD4E7"/>
+      <stop offset="1" stop-color="#9FBDD4"/>
+    </linearGradient>
+    <linearGradient id="light-home" x1="80" y1="78" x2="144" y2="154" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#24445F"/>
+      <stop offset="1" stop-color="#102B43"/>
+    </linearGradient>
+    <linearGradient id="light-arrow" x1="78" y1="116" x2="146" y2="145" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#087C68"/>
+      <stop offset=".5" stop-color="#16AE88"/>
+      <stop offset="1" stop-color="#43D5AC"/>
+    </linearGradient>
+  </defs>
+
+  <g class="logo-dark">
+    <rect x="28" y="28" width="164" height="164" rx="40" fill="url(#dark-bg)" stroke="url(#dark-edge)" stroke-width="3"/>
+    <rect x="34" y="34" width="152" height="152" rx="35" fill="none" stroke="#9AC1FF" stroke-opacity=".17"/>
+    <path d="M72 111 110 80 148 111V151H72Z" fill="none" stroke="url(#dark-home)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="151" cy="66" r="5" fill="#47E76F" filter="url(#dark-glow)"/>
+    <path d="M78 131 91 117V123H129V117L143 131 129 145V139H91V145Z" fill="url(#dark-arrow)" filter="url(#dark-glow)"/>
+    <rect x="101" y="128" width="19" height="6" rx="3" fill="#0B1730" fill-opacity=".72"/>
+  </g>
+
+  <g class="logo-light">
+    <rect x="28" y="28" width="164" height="164" rx="40" fill="url(#light-bg)" stroke="url(#light-edge)" stroke-width="3"/>
+    <rect x="34" y="34" width="152" height="152" rx="35" fill="none" stroke="#FFFFFF" stroke-opacity=".9"/>
+    <path d="M72 111 110 80 148 111V151H72Z" fill="none" stroke="url(#light-home)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="151" cy="66" r="5" fill="#1AB88D"/>
+    <path d="M78 131 91 117V123H129V117L143 131 129 145V139H91V145Z" fill="url(#light-arrow)"/>
+    <rect x="101" y="128" width="19" height="6" rx="3" fill="#EFF7FB" fill-opacity=".92"/>
+  </g>
+</svg>
