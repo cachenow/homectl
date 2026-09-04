@@ -988,6 +988,140 @@
       .card.device-card{box-shadow:0 10px 26px var(--premium-shadow-soft),inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 48%,transparent)}
     }
 
+
+    /* Premium v2 coherence layer: make low-priority controls and post-login shells speak the same material language. */
+    .login-options{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin-top:2px;overflow:hidden;
+      border:1px solid var(--premium-card-border);border-radius:13px;
+      background:linear-gradient(180deg,var(--premium-input-top),var(--premium-input-bottom));
+      box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 52%,transparent)
+    }
+    .login-options .login-preference{
+      display:flex;min-width:0;min-height:42px;align-items:center;gap:9px;padding:9px 12px;margin:0;
+      color:var(--muted);font-size:12px;font-weight:550;line-height:1.2;cursor:pointer;user-select:none
+    }
+    .login-options .login-preference+.login-preference{border-left:1px solid var(--premium-card-border)}
+    .login-options .login-preference:hover{background:color-mix(in srgb,var(--text) 3.5%,transparent);color:var(--text)}
+    .login-options input,
+    .metric-policy-option input{
+      appearance:none;-webkit-appearance:none;display:grid;place-items:center;flex:0 0 auto;margin:0;padding:0;
+      border:1px solid color-mix(in srgb,var(--premium-input-icon) 52%,transparent);background:color-mix(in srgb,var(--premium-input-bottom) 94%,transparent);
+      box-shadow:inset 0 1px 1px color-mix(in srgb,#000 10%,transparent);transition:border-color .12s ease,background .12s ease,box-shadow .12s ease,transform .12s ease
+    }
+    .login-options input{width:18px;height:18px;min-height:18px;border-radius:6px}
+    .metric-policy-option input{width:17px;height:17px;min-height:17px;border-radius:5px}
+    .login-options input::after,
+    .metric-policy-option input::after{
+      content:"";width:5px;height:9px;margin-top:-2px;border-right:2px solid #fff;border-bottom:2px solid #fff;
+      transform:rotate(45deg) scale(0);transform-origin:center;transition:transform .12s ease
+    }
+    .login-options input:checked,
+    .metric-policy-option input:checked{
+      border-color:var(--accent);background:var(--accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 2px color-mix(in srgb,var(--accent) 9%,transparent)
+    }
+    .login-options input:checked::after,
+    .metric-policy-option input:checked::after{transform:rotate(45deg) scale(1)}
+    .login-options input:focus-visible,
+    .metric-policy-option input:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 42%,transparent);outline-offset:2px}
+
+    .login-totp-head{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;gap:10px;margin:1px 0 2px}
+    .login-totp-copy{min-width:0;text-align:center}
+    .login-totp-copy strong{display:block;font-size:16px;font-weight:650;letter-spacing:-.012em}
+    .login-totp-copy .muted{margin-top:4px!important;font-size:12px!important;line-height:1.4!important}
+    .login-totp-balance{width:34px;height:34px}
+    .login-back{
+      display:grid;width:34px;height:34px;min-height:34px;padding:0;place-items:center;border:1px solid var(--premium-card-border);border-radius:50%;
+      color:var(--muted);background:linear-gradient(180deg,var(--premium-input-top),var(--premium-input-bottom));
+      box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 56%,transparent);transition:color .12s ease,background .12s ease,transform .12s ease
+    }
+    .login-back:hover{color:var(--text);background:color-mix(in srgb,var(--text) 5%,var(--premium-input-bottom))}
+    .login-back:active{transform:scale(.94)}
+    .login-back svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .login-code-field{position:relative;padding-inline:46px}
+    .login-code-field>svg{position:absolute;left:14px}
+    .login-code-field>input{text-align:center;font-size:20px;font-weight:650;letter-spacing:.27em;font-variant-numeric:tabular-nums}
+    .login-code-field>input::placeholder{font-size:14px;font-weight:400;letter-spacing:0;color:var(--subtle)}
+
+    /* Header actions should feel like quiet chrome; only active/hovered controls turn blue. */
+    .bar-actions>.nav-action{color:var(--muted)}
+    .bar-actions>.nav-action:hover{color:var(--text)}
+    .bar-actions>.nav-action.active{color:var(--link)}
+    .mobile-panel-row{color:var(--muted)}
+    .mobile-panel-row:hover{color:var(--text)}
+
+    /* Replace the old text-glyph grip with a neutral vector handle. */
+    .drag-handle{border:1px solid transparent;color:var(--subtle);font:inherit}
+    .drag-handle:hover{
+      border-color:var(--premium-card-border);background:var(--premium-detail);color:var(--muted);
+      box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 40%,transparent)
+    }
+    .drag-icon{display:block;width:16px;height:20px;fill:currentColor;stroke:none}
+    .drag-ghost .dots{display:grid;width:22px;place-items:center;color:var(--accent);font:inherit}
+    .drag-ghost .drag-icon{width:15px;height:19px}
+
+    /* Status / disclosure / card actions: keep depth, reduce outline-button noise. */
+    .status-pill{border:1px solid color-mix(in srgb,currentColor 15%,var(--premium-card-border));box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 40%,transparent)}
+    .status-pill.online{background:color-mix(in srgb,var(--green) 9%,var(--premium-detail))}
+    .status-pill.offline{background:color-mix(in srgb,var(--red) 8%,var(--premium-detail))}
+    .disclosure-btn{color:var(--link)}
+    .actions button:not(.danger){
+      color:var(--muted);background:linear-gradient(180deg,var(--premium-metric-top),var(--premium-metric-bottom));
+      box-shadow:inset 0 0 0 1px var(--premium-card-border),inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 45%,transparent)
+    }
+    .actions button:not(.danger):hover{
+      color:var(--link);background:color-mix(in srgb,var(--accent) 6%,var(--premium-metric-bottom));
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 25%,var(--premium-card-border)),inset 0 1px 0 var(--premium-highlight)
+    }
+    .result{
+      border-color:var(--premium-card-border);background:linear-gradient(180deg,var(--premium-detail),var(--premium-metric-bottom));
+      box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 38%,transparent)
+    }
+    .result-close{display:grid;width:30px;height:30px;min-height:30px;padding:0;place-items:center;border-radius:50%;color:var(--subtle)}
+    .result-close:hover{background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--text)}
+
+    /* Modal / manager / file surfaces use the same quiet material, without login-level glow. */
+    .modal-head>button{
+      color:var(--muted);background:linear-gradient(180deg,var(--premium-metric-top),var(--premium-metric-bottom));
+      box-shadow:inset 0 0 0 1px var(--premium-card-border),inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 42%,transparent)
+    }
+    .modal-head>button:hover{color:var(--text);background:color-mix(in srgb,var(--text) 5%,var(--premium-metric-bottom))}
+    .modal-box input:not([type="checkbox"]){
+      border-color:var(--premium-card-border);background:linear-gradient(180deg,var(--premium-input-top),var(--premium-input-bottom));
+      box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 44%,transparent)
+    }
+    .modal-box input:not([type="checkbox"]):focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent),inset 0 1px 0 var(--premium-highlight)}
+    .modal-box button.primary{
+      border:1px solid var(--premium-button-edge);background:linear-gradient(180deg,var(--premium-button-top),var(--premium-button-mid) 62%,var(--premium-button-bottom));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.15),inset 0 -1px 0 rgba(0,0,0,.12)
+    }
+    .modal-box button:not(.primary):not(.danger):not(.subview-back):not(.copy-code){
+      border:0;color:var(--text);background:linear-gradient(180deg,var(--premium-metric-top),var(--premium-metric-bottom));
+      box-shadow:inset 0 0 0 1px var(--premium-card-border),inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 42%,transparent)
+    }
+    .modal-box button:not(.primary):not(.danger):not(.subview-back):not(.copy-code):hover{background:color-mix(in srgb,var(--text) 5%,var(--premium-metric-bottom))}
+    .modal-box .modal-head>button{color:var(--muted);background:linear-gradient(180deg,var(--premium-metric-top),var(--premium-metric-bottom));box-shadow:inset 0 0 0 1px var(--premium-card-border),inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 42%,transparent)}
+    .modal-box .modal-head>button:hover{color:var(--text);background:color-mix(in srgb,var(--text) 5%,var(--premium-metric-bottom))}
+    .drag-ghost{border-color:color-mix(in srgb,var(--accent) 34%,var(--premium-border));background:linear-gradient(180deg,var(--premium-card-top),var(--premium-card-bottom));box-shadow:0 18px 54px var(--premium-shadow),inset 0 1px 0 var(--premium-highlight)}
+    .subview-back{border-color:var(--premium-card-border);background:linear-gradient(180deg,var(--premium-metric-top),var(--premium-metric-bottom));box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 42%,transparent)}
+    .copy-code{background:linear-gradient(180deg,var(--premium-metric-top),var(--premium-metric-bottom));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 32%,var(--premium-card-border)),inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 42%,transparent)}
+    .setting-summary,.hint-card,.secure-result,.metric-policy-target,.metric-policy-option{
+      background:linear-gradient(180deg,color-mix(in srgb,var(--premium-detail) 96%,var(--text) 1%),var(--premium-detail));
+      box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 34%,transparent)
+    }
+    .table-wrap,.file-table-scroll{background:linear-gradient(180deg,var(--premium-card-top),var(--premium-card-bottom));box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 32%,transparent)}
+    .manage-table th,.file-table th{background:var(--premium-detail);color:var(--muted)}
+    .manage-table tr:hover td,.file-table tbody tr:hover td{background:color-mix(in srgb,var(--text) 2.5%,transparent)}
+    .manage-actions button,.file-actions button{border-radius:9px}
+    .file-toolbar button{border-radius:10px}
+    .badge{border-color:var(--premium-card-border);background:var(--premium-detail);border-radius:999px}
+
+    @media(max-width:700px){
+      .login-options .login-preference{min-height:40px;padding:8px 9px;font-size:11px;gap:7px}
+      .login-options input{width:17px;height:17px;min-height:17px}
+      .login-totp-head{grid-template-columns:32px minmax(0,1fr) 32px}.login-back,.login-totp-balance{width:32px;height:32px;min-height:32px}
+      .login-code-field{padding-inline:42px}.login-code-field>svg{left:13px}.login-code-field>input{font-size:19px;letter-spacing:.22em}
+    }
+
 </style>
 </head>
 <body>
@@ -1035,17 +1169,16 @@
       <div id="loginPasswordStep" class="stack">
         <label class="login-field" aria-label="用户名"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg><input id="username" autocomplete="username" placeholder="用户名"></label>
         <label class="login-field" aria-label="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="password" type="password" autocomplete="current-password" placeholder="密码"></label>
-        <div class="login-options">
-          <label><input id="rememberUsername" type="checkbox">记住用户名</label>
-          <label><input id="rememberLogin" type="checkbox">保持登录</label>
+        <div class="login-options" aria-label="登录偏好">
+          <label class="login-preference"><input id="rememberUsername" type="checkbox"><span>记住用户名</span></label>
+          <label class="login-preference"><input id="rememberLogin" type="checkbox"><span>保持登录</span></label>
         </div>
         <button class="primary" onclick="login()">登录</button>
       </div>
       <div id="loginTOTPStep" class="stack hidden">
-        <div><strong>两步验证</strong><div class="muted" style="margin-top:4px">输入认证器当前显示的 6 位验证码。</div></div>
-        <label class="login-field" aria-label="6 位验证码"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="M9 12h6M12 9v6"/></svg><input id="loginTOTP" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="6 位验证码"></label>
+        <div class="login-totp-head"><button class="login-back" onclick="backToPasswordLogin()" title="返回密码登录" aria-label="返回密码登录"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="login-totp-copy"><strong>两步验证</strong><div class="muted">输入认证器当前显示的 6 位验证码。</div></div><span class="login-totp-balance" aria-hidden="true"></span></div>
+        <label class="login-field login-code-field" aria-label="6 位验证码"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="M9 12h6M12 9v6"/></svg><input id="loginTOTP" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="6 位验证码"></label>
         <button class="primary" onclick="verifyLoginTOTP()">验证</button>
-        <button class="login-back" onclick="backToPasswordLogin()">← 返回密码登录</button>
       </div>
       <div id="loginerr" class="offline"></div>
     </div>
@@ -1107,8 +1240,8 @@
   <div class="modal-head"><h2>设备管理</h2><button onclick="closeModal('deviceManagerModal')">关闭</button></div>
   <div class="modal-body">
     <div id="deviceManagerMainView" class="modal-view">
-      <div class="section"><div class="manage-toolbar"><div><h3>设备</h3><div class="muted">修改名称不会改变顺序；按住 ⠿ 可调整设备位置。</div></div><button class="primary" onclick="toggleEnrollPanel()">添加设备</button></div></div>
-      <div class="section"><div id="deviceManageMsg" class="inline-message" role="status" aria-live="polite"></div><div class="table-wrap"><table class="manage-table"><thead><tr><th aria-label="排序"></th><th>自定义设备名</th><th>状态</th><th>设备 ID</th><th>最后心跳</th><th>操作</th></tr></thead><tbody id="deviceManageRows"></tbody></table></div><div class="manager-footnote">⠿ 只用于拖动排序；“指标卡片”会进入独立设置视图。删除设备会吊销长期 Device Token 并立即断开连接。</div></div>
+      <div class="section"><div class="manage-toolbar"><div><h3>设备</h3><div class="muted">修改名称不会改变顺序；按住拖动手柄可调整设备位置。</div></div><button class="primary" onclick="toggleEnrollPanel()">添加设备</button></div></div>
+      <div class="section"><div id="deviceManageMsg" class="inline-message" role="status" aria-live="polite"></div><div class="table-wrap"><table class="manage-table"><thead><tr><th aria-label="排序"></th><th>自定义设备名</th><th>状态</th><th>设备 ID</th><th>最后心跳</th><th>操作</th></tr></thead><tbody id="deviceManageRows"></tbody></table></div><div class="manager-footnote">拖动手柄只用于调整顺序；“指标卡片”会进入独立设置视图。删除设备会吊销长期 Device Token 并立即断开连接。</div></div>
     </div>
     <div id="enrollPanel" class="manage-enroll modal-subview hidden">
       <div class="subview-head"><button class="subview-back" onclick="closeDeviceManagerSubview()" title="返回设备管理" aria-label="返回设备管理"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="subview-head-copy"><h3>添加设备</h3><p>生成一次性注册凭据，并在 Agent 首次连接时完成绑定。</p></div></div>
@@ -1151,6 +1284,7 @@ const deviceResults={}; const resultTimers={};
 const metricCardKeys=['cpu','memory','disk','network','processes','diskio'];
 const metricCardLabels={cpu:'CPU 与温度',memory:'内存',disk:'存储',network:'网络吞吐',processes:'进程 / 任务',diskio:'磁盘 I/O'};
 function metricIconHTML(key){return `<svg class="metric-type-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#metric-icon-${key}"></use></svg>`}
+function dragHandleIconHTML(){return `<svg class="drag-icon" viewBox="0 0 16 20" aria-hidden="true" focusable="false"><circle cx="5" cy="5" r="1.35"/><circle cx="11" cy="5" r="1.35"/><circle cx="5" cy="10" r="1.35"/><circle cx="11" cy="10" r="1.35"/><circle cx="5" cy="15" r="1.35"/><circle cx="11" cy="15" r="1.35"/></svg>`}
 function metricLabelHTML(key,label,summary=false){return `<${summary?'div':'div'} class="${summary?'device-summary-label ':'metric-label '}metric-label-with-icon">${metricIconHTML(key)}<span>${escapeHTML(label)}</span></${summary?'div':'div'}>`}
 const themeMedia=window.matchMedia('(prefers-color-scheme: dark)');
 function escapeHTML(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -1321,7 +1455,7 @@ function renderDevices(){
       ipDetailHTML(addresses,idx),detailHTML('Agent 版本',i.agent_version||'-','third'),detailHTML('最后心跳',humanAgo(d.last_seen),'third')
     ].join('');
     const actions=`<div class="actions">${settings.allow_exec?`<button ${d.online?'':'disabled'} onclick="runCmd(${idx})">执行命令</button>`:''}${settings.allow_terminal?`<button ${d.online?'':'disabled'} onclick="openTerminal(${idx})">终端</button>`:''}${settings.file_browser_enabled?`<button ${d.online?'':'disabled'} onclick="openFiles(${idx})">文件</button>`:''}<button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'reboot')">重启</button><button class="danger" ${d.online?'':'disabled'} onclick="action(${idx},'poweroff')">关机</button></div>`;
-    const expanded=expandedDevices.has(d.id),collapsedSummary=expanded?'':collapsedDeviceSummaryHTML(d,i);return `<div class="card device-card" data-device-id="${escapeHTML(d.id)}"><div class="device-head"><button class="drag-handle" type="button" title="按住并拖动排序" aria-label="拖动调整 ${escapeHTML(d.name||d.id)} 顺序">⠿</button><div class="device-head-main"><div class="device-title"><h3>${escapeHTML(d.name||d.id)}</h3><div class="status-cluster">${status}${uptime}</div></div><div class="device-id">${escapeHTML(d.id)}</div></div><button class="disclosure-btn" onclick="toggleDeviceCard(${idx})" title="${expanded?'收起设备详情':'查看设备详情'}" aria-label="${expanded?'收起设备详情':'查看设备详情'}" aria-expanded="${expanded}"><span>${expanded?'收起':'详情'}</span><svg class="${expanded?'rotated':''}" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>${collapsedSummary}<div class="device-body ${expanded?'':'hidden'}"><div class="metrics">${metrics}</div><div class="details">${details}</div>${actions}${resultHTML(d,idx)}</div></div>`;
+    const expanded=expandedDevices.has(d.id),collapsedSummary=expanded?'':collapsedDeviceSummaryHTML(d,i);return `<div class="card device-card" data-device-id="${escapeHTML(d.id)}"><div class="device-head"><button class="drag-handle" type="button" title="按住并拖动排序" aria-label="拖动调整 ${escapeHTML(d.name||d.id)} 顺序">${dragHandleIconHTML()}</button><div class="device-head-main"><div class="device-title"><h3>${escapeHTML(d.name||d.id)}</h3><div class="status-cluster">${status}${uptime}</div></div><div class="device-id">${escapeHTML(d.id)}</div></div><button class="disclosure-btn" onclick="toggleDeviceCard(${idx})" title="${expanded?'收起设备详情':'查看设备详情'}" aria-label="${expanded?'收起设备详情':'查看设备详情'}" aria-expanded="${expanded}"><span>${expanded?'收起':'详情'}</span><svg class="${expanded?'rotated':''}" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>${collapsedSummary}<div class="device-body ${expanded?'':'hidden'}"><div class="metrics">${metrics}</div><div class="details">${details}</div>${actions}${resultHTML(d,idx)}</div></div>`;
   }).join('');
   bindDeviceDragHandles(root,'cards');
 }
@@ -1335,7 +1469,7 @@ function startDeviceDrag(event,kind){
   const rect=item.getBoundingClientRect(),listRect=list.getBoundingClientRect(),originalNext=item.nextSibling;
   let slot;if(kind==='cards'){slot=document.createElement('div');slot.className='device-drop-slot';slot.style.height=`${rect.height}px`}else{slot=document.createElement('tr');slot.className='manager-drop-row';slot.innerHTML='<td colspan="6"></td>';slot.firstElementChild.style.height=`${rect.height}px`}
   item.before(slot);item.classList.add('drag-source');
-  const ghost=document.createElement('div');ghost.className='drag-ghost';ghost.style.width=`${Math.min(rect.width,Math.max(240,Math.min(520,window.innerWidth-24)))}px`;ghost.style.left=`${rect.left}px`;ghost.style.top=`${rect.top}px`;ghost.innerHTML=`<span class="dots">⠿</span><strong>${escapeHTML(devices.find(d=>d.id===item.dataset.deviceId)?.name||item.dataset.deviceId)}</strong><small>移动中</small>`;document.body.appendChild(ghost);
+  const ghost=document.createElement('div');ghost.className='drag-ghost';ghost.style.width=`${Math.min(rect.width,Math.max(240,Math.min(520,window.innerWidth-24)))}px`;ghost.style.left=`${rect.left}px`;ghost.style.top=`${rect.top}px`;ghost.innerHTML=`<span class="dots">${dragHandleIconHTML()}</span><strong>${escapeHTML(devices.find(d=>d.id===item.dataset.deviceId)?.name||item.dataset.deviceId)}</strong><small>移动中</small>`;document.body.appendChild(ghost);
   const ghostRect=ghost.getBoundingClientRect();ghost.style.left=`${Math.max(listRect.left,Math.min(rect.left,listRect.right-ghostRect.width))}px`;
   deviceDragState={item,list,slot,ghost,kind,originalNext,pointerId:event.pointerId,inside:true,offsetX:Math.min(ghostRect.width/2,event.clientX-rect.left),offsetY:Math.min(ghostRect.height/2,event.clientY-rect.top),ghostWidth:ghostRect.width,ghostHeight:ghostRect.height};
   window.addEventListener('pointermove',moveDeviceDrag,{passive:false});window.addEventListener('pointerup',finishDeviceDrag);window.addEventListener('pointercancel',cancelDeviceDrag);
@@ -1552,7 +1686,7 @@ function renderDeviceManager(){
   const drafts={};root.querySelectorAll('input[data-device-id]').forEach(el=>drafts[el.dataset.deviceId]=el.value);
   if(!devices.length){root.innerHTML='<tr><td colspan="6" class="muted">暂无设备。</td></tr>';selectedMetricDeviceID='';$('#metricPolicyPanel').classList.add('hidden');return}
   if(!devices.some(d=>d.id===selectedMetricDeviceID))selectedMetricDeviceID=devices[0].id;
-  root.innerHTML=devices.map((d,idx)=>`<tr data-device-id="${escapeHTML(d.id)}" class="${d.id===selectedMetricDeviceID?'policy-selected':''}"><td class="handle-cell"><button class="drag-handle" type="button" title="按住并拖动排序" aria-label="拖动调整 ${escapeHTML(d.name||d.id)} 顺序">⠿</button></td><td><input id="manage-name-${idx}" data-device-id="${escapeHTML(d.id)}" value="${escapeHTML(drafts[d.id]??d.name??d.id)}" maxlength="128"></td><td>${d.online?'<span class="status-pill online"><span class="status-dot"></span>在线</span>':'<span class="status-pill offline"><span class="status-dot"></span>离线</span>'}</td><td><div class="manage-id">${escapeHTML(d.id)}</div></td><td>${humanAgo(d.last_seen)}</td><td class="manage-actions"><button class="small" onclick="saveDeviceName(${idx})">保存</button><button class="small" onclick="openMetricCards(${idx})" aria-pressed="${d.id===selectedMetricDeviceID}">指标卡片</button><button class="small danger" onclick="deleteManagedDevice(${idx})">删除</button></td></tr>`).join('');
+  root.innerHTML=devices.map((d,idx)=>`<tr data-device-id="${escapeHTML(d.id)}" class="${d.id===selectedMetricDeviceID?'policy-selected':''}"><td class="handle-cell"><button class="drag-handle" type="button" title="按住并拖动排序" aria-label="拖动调整 ${escapeHTML(d.name||d.id)} 顺序">${dragHandleIconHTML()}</button></td><td><input id="manage-name-${idx}" data-device-id="${escapeHTML(d.id)}" value="${escapeHTML(drafts[d.id]??d.name??d.id)}" maxlength="128"></td><td>${d.online?'<span class="status-pill online"><span class="status-dot"></span>在线</span>':'<span class="status-pill offline"><span class="status-dot"></span>离线</span>'}</td><td><div class="manage-id">${escapeHTML(d.id)}</div></td><td>${humanAgo(d.last_seen)}</td><td class="manage-actions"><button class="small" onclick="saveDeviceName(${idx})">保存</button><button class="small" onclick="openMetricCards(${idx})" aria-pressed="${d.id===selectedMetricDeviceID}">指标卡片</button><button class="small danger" onclick="deleteManagedDevice(${idx})">删除</button></td></tr>`).join('');
   bindDeviceDragHandles(root,'manager');renderMetricPolicy();
 }
 function renderMetricPolicy(message=''){
