@@ -765,10 +765,261 @@
     .device-summary-label.metric-label-with-icon{gap:5px}
     .device-summary-label .metric-type-icon{width:14px;height:14px;color:var(--subtle)}
     @media(max-width:419px){.metric-type-icon{width:16px;height:16px}.device-summary-label .metric-type-icon{width:13px;height:13px}}
+
+
+    /* Premium material layer: luminous where branding matters, restrained where information matters. */
+    :root{
+      --premium-page-0:#030509;
+      --premium-page-1:#080c13;
+      --premium-glow:rgba(53,92,158,.19);
+      --premium-header-top:#151e2c;
+      --premium-header-bottom:#0b1018;
+      --premium-login-top:#121a26;
+      --premium-login-bottom:#090d14;
+      --premium-card-top:#17191f;
+      --premium-card-bottom:#101217;
+      --premium-metric-top:#11151c;
+      --premium-metric-bottom:#0d1015;
+      --premium-detail:#12161d;
+      --premium-input-top:#0f151f;
+      --premium-input-bottom:#0a0f17;
+      --premium-border:rgba(151,181,222,.18);
+      --premium-card-border:rgba(158,178,207,.13);
+      --premium-highlight:rgba(255,255,255,.06);
+      --premium-highlight-soft:rgba(161,197,255,.24);
+      --premium-shadow:rgba(0,0,0,.28);
+      --premium-shadow-soft:rgba(0,0,0,.16);
+      --premium-button-top:#3561bd;
+      --premium-button-mid:#24498f;
+      --premium-button-bottom:#1a3977;
+      --premium-button-edge:rgba(117,157,241,.46);
+      --premium-input-icon:#8295b4;
+      --premium-logo-shadow:rgba(0,0,0,.34)
+    }
+    :root[data-theme="light"]{
+      --premium-page-0:#f4f7fa;
+      --premium-page-1:#eef3f8;
+      --premium-glow:rgba(93,151,211,.14);
+      --premium-header-top:#ffffff;
+      --premium-header-bottom:#f6f9fc;
+      --premium-login-top:#ffffff;
+      --premium-login-bottom:#f7f9fc;
+      --premium-card-top:#ffffff;
+      --premium-card-bottom:#fbfcfe;
+      --premium-metric-top:#fafcff;
+      --premium-metric-bottom:#f3f6fa;
+      --premium-detail:#f5f8fb;
+      --premium-input-top:#ffffff;
+      --premium-input-bottom:#f7f9fc;
+      --premium-border:rgba(67,103,145,.17);
+      --premium-card-border:rgba(72,99,131,.13);
+      --premium-highlight:rgba(255,255,255,.92);
+      --premium-highlight-soft:rgba(72,133,192,.16);
+      --premium-shadow:rgba(41,62,88,.11);
+      --premium-shadow-soft:rgba(41,62,88,.06);
+      --premium-button-top:#1684ee;
+      --premium-button-mid:#0873db;
+      --premium-button-bottom:#0064c8;
+      --premium-button-edge:rgba(0,97,196,.28);
+      --premium-input-icon:#637d9c;
+      --premium-logo-shadow:rgba(47,84,119,.16)
+    }
+    @media(prefers-color-scheme:light){
+      :root[data-theme="system"]{
+        --premium-page-0:#f4f7fa;--premium-page-1:#eef3f8;--premium-glow:rgba(93,151,211,.14);
+        --premium-header-top:#ffffff;--premium-header-bottom:#f6f9fc;--premium-login-top:#ffffff;--premium-login-bottom:#f7f9fc;
+        --premium-card-top:#ffffff;--premium-card-bottom:#fbfcfe;--premium-metric-top:#fafcff;--premium-metric-bottom:#f3f6fa;
+        --premium-detail:#f5f8fb;--premium-input-top:#ffffff;--premium-input-bottom:#f7f9fc;
+        --premium-border:rgba(67,103,145,.17);--premium-card-border:rgba(72,99,131,.13);
+        --premium-highlight:rgba(255,255,255,.92);--premium-highlight-soft:rgba(72,133,192,.16);
+        --premium-shadow:rgba(41,62,88,.11);--premium-shadow-soft:rgba(41,62,88,.06);
+        --premium-button-top:#1684ee;--premium-button-mid:#0873db;--premium-button-bottom:#0064c8;
+        --premium-button-edge:rgba(0,97,196,.28);--premium-input-icon:#637d9c;--premium-logo-shadow:rgba(47,84,119,.16)
+      }
+    }
+
+    html,body{
+      background:
+        radial-gradient(920px 430px at 50% -180px,var(--premium-glow),transparent 64%),
+        linear-gradient(180deg,var(--premium-page-1) 0%,var(--premium-page-0) 54%,var(--premium-page-0) 100%);
+      background-attachment:fixed
+    }
+    .wrap,#app{background:transparent}.wrap{min-height:100vh}
+
+    /* Shared adaptive HomeCTL mark. Dark is the default; explicit/system light swaps the use node. */
+    .brand-logo{display:block;overflow:visible;filter:drop-shadow(0 8px 16px var(--premium-logo-shadow))}
+    .brand-logo .logo-light-use{display:none}
+    :root[data-theme="light"] .brand-logo .logo-dark-use{display:none}
+    :root[data-theme="light"] .brand-logo .logo-light-use{display:inline}
+    @media(prefers-color-scheme:light){
+      :root[data-theme="system"] .brand-logo .logo-dark-use{display:none}
+      :root[data-theme="system"] .brand-logo .logo-light-use{display:inline}
+    }
+
+    /* Header: stronger material than content cards, still quiet enough for a control surface. */
+    .bar{
+      min-height:70px;padding:10px 14px 10px 13px;
+      border:1px solid var(--premium-border);
+      background:linear-gradient(180deg,var(--premium-header-top),var(--premium-header-bottom));
+      box-shadow:0 18px 46px var(--premium-shadow-soft),inset 0 1px 0 var(--premium-highlight);
+      isolation:isolate
+    }
+    .bar::before{
+      content:"";position:absolute;z-index:-1;left:18px;right:18px;top:-1px;height:1px;pointer-events:none;
+      background:linear-gradient(90deg,transparent,var(--premium-highlight-soft),transparent)
+    }
+    .brand{display:flex;min-width:0;align-items:center;gap:12px}
+    .brand-logo--header{width:46px;height:46px;flex:0 0 46px}
+    .brand-copy{min-width:0}
+    .brand h1{font-size:21px;font-weight:700;letter-spacing:-.032em}
+    .brand .muted{margin-top:4px;color:var(--muted);font-size:11px}
+    .bar-actions{border-left-color:color-mix(in srgb,var(--premium-border) 82%,transparent)}
+    .bar-actions>.nav-action{
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--premium-border) 58%,transparent);
+      background:linear-gradient(180deg,color-mix(in srgb,var(--premium-header-top) 88%,var(--text) 3%),color-mix(in srgb,var(--premium-header-bottom) 94%,var(--text) 2%))
+    }
+    .bar-actions>.nav-action:hover{background:color-mix(in srgb,var(--text) 8%,var(--premium-header-bottom))}
+    .bar-actions>.nav-action.active{background:var(--accent-soft);color:var(--link);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%,transparent)}
+    .bar .theme-switch,.mobile-theme-switch{
+      border-color:color-mix(in srgb,var(--premium-border) 78%,transparent);
+      background:color-mix(in srgb,var(--premium-header-bottom) 92%,var(--text) 4%);
+      box-shadow:inset 0 1px 0 var(--premium-highlight)
+    }
+
+    /* Login: highest visual concentration in the product. */
+    .login{max-width:480px;padding:8vh 24px 64px}
+    .login-card{
+      position:relative;overflow:hidden;padding:32px 32px 30px;border:1px solid var(--premium-border);border-radius:26px;
+      background:
+        radial-gradient(420px 180px at 50% -95px,color-mix(in srgb,var(--accent) 14%,transparent),transparent 68%),
+        linear-gradient(180deg,var(--premium-login-top),var(--premium-login-bottom));
+      box-shadow:0 28px 84px var(--premium-shadow),inset 0 1px 0 var(--premium-highlight)
+    }
+    .login-card::before{
+      content:"";position:absolute;left:26px;right:26px;top:0;height:1px;pointer-events:none;
+      background:linear-gradient(90deg,transparent,var(--premium-highlight-soft),transparent)
+    }
+    .login-brand{text-align:center;margin-bottom:10px}
+    .brand-logo--login{width:92px;height:92px;margin:0 auto 12px}
+    .login-card h1{margin:0!important;font-size:38px;font-weight:700;line-height:1;letter-spacing:-.045em}
+    .login-card .login-brand .muted{margin-top:8px;font-size:13px;line-height:1.4;color:var(--muted)}
+    .login-card>.stack{gap:12px}
+    .login-field{
+      display:flex;min-height:48px;align-items:center;gap:11px;padding:0 13px;border:1px solid var(--premium-card-border);border-radius:13px;
+      background:linear-gradient(180deg,var(--premium-input-top),var(--premium-input-bottom));
+      box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 55%,transparent);
+      transition:border-color .12s ease,box-shadow .12s ease,background-color .12s ease
+    }
+    .login-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 17%,transparent),inset 0 1px 0 var(--premium-highlight)}
+    .login-field>svg{width:18px;height:18px;flex:0 0 auto;fill:none;stroke:var(--premium-input-icon);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .login-field>input{
+      width:100%;min-width:0;min-height:46px;padding:0;border:0;border-radius:0;background:transparent;color:var(--text);box-shadow:none;outline:0;font-size:16px
+    }
+    .login-field>input:hover,.login-field>input:focus{border:0;background:transparent;box-shadow:none;outline:0}
+    .login-card button.primary{
+      min-height:48px;border:1px solid var(--premium-button-edge);border-radius:15px;
+      background:
+        radial-gradient(145% 185% at 50% -78%,rgba(255,255,255,.24),transparent 47%),
+        linear-gradient(180deg,var(--premium-button-top) 0%,var(--premium-button-mid) 58%,var(--premium-button-bottom) 100%);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.17),0 9px 25px color-mix(in srgb,var(--accent) 22%,transparent)
+    }
+    .login-card button.primary:hover{filter:brightness(1.045)}
+    .login-options{margin-top:1px}
+    .login-options label{color:var(--muted)}
+    #loginerr:not(:empty){margin-top:3px;padding:9px 11px;border-radius:10px;background:color-mix(in srgb,var(--red) 8%,transparent)}
+
+    /* Main device cards: restrained material, much less luminous than login/header. */
+    .card.device-card{
+      position:relative;border-color:var(--premium-card-border);
+      background:linear-gradient(180deg,var(--premium-card-top),var(--premium-card-bottom));
+      box-shadow:0 16px 38px var(--premium-shadow-soft),inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 55%,transparent)
+    }
+    .card.device-card::before{
+      content:"";position:absolute;left:28px;right:28px;top:0;height:1px;pointer-events:none;
+      background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--premium-highlight-soft) 55%,transparent),transparent)
+    }
+    .device-title h3{font-weight:700}
+    .uptime-chip{border:1px solid color-mix(in srgb,var(--premium-card-border) 80%,transparent);background:color-mix(in srgb,var(--premium-detail) 92%,transparent)}
+    .disclosure-btn{
+      background:linear-gradient(180deg,color-mix(in srgb,var(--accent-soft) 82%,var(--premium-card-top)),color-mix(in srgb,var(--accent-soft) 62%,var(--premium-card-bottom)));
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent),inset 0 1px 0 var(--premium-highlight)
+    }
+    .metric{
+      border-color:var(--premium-card-border);
+      background:linear-gradient(180deg,var(--premium-metric-top),var(--premium-metric-bottom));
+      box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 48%,transparent)
+    }
+    .metric-label,.metric-type-icon{color:color-mix(in srgb,var(--muted) 92%,var(--link) 8%)}
+    .detail{
+      border-color:color-mix(in srgb,var(--premium-card-border) 88%,transparent);
+      background:var(--premium-detail);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 38%,transparent)
+    }
+    .device-collapsed-summary{border-top-color:color-mix(in srgb,var(--premium-card-border) 95%,transparent)}
+    .device-summary-slot+.device-summary-slot{border-left-color:color-mix(in srgb,var(--premium-card-border) 95%,transparent)}
+    .solid-progress{box-shadow:inset 0 1px 2px color-mix(in srgb,#000 12%,transparent)}
+    .actions{border-top-color:color-mix(in srgb,var(--premium-card-border) 94%,transparent)}
+    .actions button:not(.danger){
+      background:linear-gradient(180deg,color-mix(in srgb,var(--premium-metric-top) 94%,var(--accent) 3%),color-mix(in srgb,var(--premium-metric-bottom) 96%,var(--accent) 2%));
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 34%,transparent),inset 0 1px 0 var(--premium-highlight)
+    }
+
+    /* Secondary shells inherit the material system without turning into glow panels. */
+    .modal>.modal-box{
+      border-color:var(--premium-border);
+      background:linear-gradient(180deg,var(--premium-card-top),var(--premium-card-bottom));
+      box-shadow:0 28px 84px var(--premium-shadow),inset 0 1px 0 var(--premium-highlight)
+    }
+    .modal-head{background:transparent;border-bottom-color:var(--premium-card-border)}
+    .mobile-panel{
+      border-color:var(--premium-border);
+      background:linear-gradient(180deg,var(--premium-header-top),var(--premium-header-bottom));
+      box-shadow:0 18px 50px var(--premium-shadow),inset 0 1px 0 var(--premium-highlight)
+    }
+    .manage-enroll,.setting-summary,.hint-card,.secure-result,.metric-policy-option,.metric-policy-target,.table-wrap,.file-table-scroll{
+      border-color:var(--premium-card-border)
+    }
+
+    @media(max-width:700px){
+      .bar{min-height:62px;padding:8px 10px;gap:8px}
+      .brand{gap:9px}.brand-logo--header{width:42px;height:42px;flex-basis:42px}
+      .brand h1{font-size:19px}.brand .muted{display:none}
+      .login{padding:6vh 16px 42px}.login-card{padding:27px 20px 24px;border-radius:22px}
+      .brand-logo--login{width:84px;height:84px;margin-bottom:10px}.login-card h1{font-size:34px}
+      .card.device-card{box-shadow:0 10px 26px var(--premium-shadow-soft),inset 0 1px 0 color-mix(in srgb,var(--premium-highlight) 48%,transparent)}
+    }
+
 </style>
 </head>
 <body>
 <svg class="metric-icon-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="homectl-logo-dark-bg" x1="28" y1="28" x2="192" y2="192" gradientUnits="userSpaceOnUse"><stop stop-color="#17366F"/><stop offset=".45" stop-color="#0D2148"/><stop offset="1" stop-color="#071124"/></linearGradient>
+    <linearGradient id="homectl-logo-dark-edge" x1="38" y1="36" x2="185" y2="190" gradientUnits="userSpaceOnUse"><stop stop-color="#6B98FF"/><stop offset=".45" stop-color="#2E5FB5"/><stop offset="1" stop-color="#1B3F82"/></linearGradient>
+    <linearGradient id="homectl-logo-dark-home" x1="80" y1="78" x2="144" y2="154" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#AEBFDC"/></linearGradient>
+    <linearGradient id="homectl-logo-dark-arrow" x1="78" y1="116" x2="146" y2="145" gradientUnits="userSpaceOnUse"><stop stop-color="#26BD91"/><stop offset=".48" stop-color="#3CDFAA"/><stop offset="1" stop-color="#82F0CE"/></linearGradient>
+    <linearGradient id="homectl-logo-light-bg" x1="28" y1="28" x2="192" y2="192" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset=".52" stop-color="#F4F9FD"/><stop offset="1" stop-color="#E6F0F7"/></linearGradient>
+    <linearGradient id="homectl-logo-light-edge" x1="38" y1="36" x2="185" y2="190" gradientUnits="userSpaceOnUse"><stop stop-color="#D7E9F6"/><stop offset=".48" stop-color="#BCD4E7"/><stop offset="1" stop-color="#9FBDD4"/></linearGradient>
+    <linearGradient id="homectl-logo-light-home" x1="80" y1="78" x2="144" y2="154" gradientUnits="userSpaceOnUse"><stop stop-color="#24445F"/><stop offset="1" stop-color="#102B43"/></linearGradient>
+    <linearGradient id="homectl-logo-light-arrow" x1="78" y1="116" x2="146" y2="145" gradientUnits="userSpaceOnUse"><stop stop-color="#087C68"/><stop offset=".5" stop-color="#16AE88"/><stop offset="1" stop-color="#43D5AC"/></linearGradient>
+    <filter id="homectl-logo-dark-glow" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <symbol id="homectl-logo-dark" viewBox="0 0 220 220">
+    <rect x="28" y="28" width="164" height="164" rx="40" fill="url(#homectl-logo-dark-bg)" stroke="url(#homectl-logo-dark-edge)" stroke-width="3"/>
+    <rect x="34" y="34" width="152" height="152" rx="35" fill="none" stroke="#9AC1FF" stroke-opacity=".17"/>
+    <path d="M72 111 110 80 148 111V151H72Z" fill="none" stroke="url(#homectl-logo-dark-home)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="151" cy="66" r="5" fill="#47E76F" filter="url(#homectl-logo-dark-glow)"/>
+    <path d="M78 131 91 117V123H129V117L143 131 129 145V139H91V145Z" fill="url(#homectl-logo-dark-arrow)" filter="url(#homectl-logo-dark-glow)"/>
+    <rect x="101" y="128" width="19" height="6" rx="3" fill="#0B1730" fill-opacity=".72"/>
+  </symbol>
+  <symbol id="homectl-logo-light" viewBox="0 0 220 220">
+    <rect x="28" y="28" width="164" height="164" rx="40" fill="url(#homectl-logo-light-bg)" stroke="url(#homectl-logo-light-edge)" stroke-width="3"/>
+    <rect x="34" y="34" width="152" height="152" rx="35" fill="none" stroke="#FFFFFF" stroke-opacity=".9"/>
+    <path d="M72 111 110 80 148 111V151H72Z" fill="none" stroke="url(#homectl-logo-light-home)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="151" cy="66" r="5" fill="#1AB88D"/>
+    <path d="M78 131 91 117V123H129V117L143 131 129 145V139H91V145Z" fill="url(#homectl-logo-light-arrow)"/>
+    <rect x="101" y="128" width="19" height="6" rx="3" fill="#EFF7FB" fill-opacity=".92"/>
+  </symbol>
+
   <symbol id="metric-icon-cpu" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><rect x="10" y="10" width="4" height="4" rx="1"/><path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
   <symbol id="metric-icon-memory" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 10v4M11 10v4M15 10v4M19 10v4M7 17v2M11 17v2M15 17v2M19 17v2"/></symbol>
   <symbol id="metric-icon-disk" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="M7 15h10"/><circle cx="17" cy="9" r="1"/></symbol>
@@ -780,10 +1031,10 @@
 <div class="wrap">
   <section id="login" class="login hidden">
     <div class="login-card stack">
-      <div><h1 style="margin:0">HomeCTL</h1><div class="muted">安全连接你的 Linux 设备</div></div>
+      <div class="login-brand"><svg class="brand-logo brand-logo--login" viewBox="0 0 220 220" aria-hidden="true" focusable="false"><use class="logo-dark-use" href="#homectl-logo-dark"></use><use class="logo-light-use" href="#homectl-logo-light"></use></svg><h1>HomeCTL</h1><div class="muted">安全连接你的 Linux 设备</div></div>
       <div id="loginPasswordStep" class="stack">
-        <input id="username" autocomplete="username" placeholder="用户名">
-        <input id="password" type="password" autocomplete="current-password" placeholder="密码">
+        <label class="login-field" aria-label="用户名"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg><input id="username" autocomplete="username" placeholder="用户名"></label>
+        <label class="login-field" aria-label="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="password" type="password" autocomplete="current-password" placeholder="密码"></label>
         <div class="login-options">
           <label><input id="rememberUsername" type="checkbox">记住用户名</label>
           <label><input id="rememberLogin" type="checkbox">保持登录</label>
@@ -792,7 +1043,7 @@
       </div>
       <div id="loginTOTPStep" class="stack hidden">
         <div><strong>两步验证</strong><div class="muted" style="margin-top:4px">输入认证器当前显示的 6 位验证码。</div></div>
-        <input id="loginTOTP" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="6 位验证码">
+        <label class="login-field" aria-label="6 位验证码"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="M9 12h6M12 9v6"/></svg><input id="loginTOTP" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="6 位验证码"></label>
         <button class="primary" onclick="verifyLoginTOTP()">验证</button>
         <button class="login-back" onclick="backToPasswordLogin()">← 返回密码登录</button>
       </div>
@@ -802,7 +1053,7 @@
 
   <section id="app" class="hidden">
     <div class="bar">
-      <div class="brand"><h1>HomeCTL</h1><span class="muted">设备控制台</span></div>
+      <div class="brand"><svg class="brand-logo brand-logo--header" viewBox="0 0 220 220" aria-hidden="true" focusable="false"><use class="logo-dark-use" href="#homectl-logo-dark"></use><use class="logo-light-use" href="#homectl-logo-light"></use></svg><div class="brand-copy"><h1>HomeCTL</h1><span class="muted">设备控制台</span></div></div>
       <div class="bar-actions">
         <div class="theme-switch" aria-label="主题切换">
           <button id="themeDark" onclick="setTheme('dark')" title="暗色" aria-label="暗色"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.2A8.4 8.4 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z"/></svg></button>
