@@ -5,9 +5,9 @@ go 1.27.0
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/creack/pty v1.1.24
-	golang.org/x/crypto v0.56.0
-	golang.org/x/sys v0.47.0
-	golang.org/x/text v0.41.0
+	golang.org/x/crypto v0.57.0
+	golang.org/x/sys v0.48.0
+	golang.org/x/text v0.42.0
 	modernc.org/sqlite v1.58.0
 )
 
