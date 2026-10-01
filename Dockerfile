@@ -1,4 +1,4 @@
-FROM golang:1.27.0-bookworm AS build
+FROM golang:1.27.1-bookworm AS build
 WORKDIR /src
 ARG VERSION=dev
 COPY go.mod go.sum* ./
